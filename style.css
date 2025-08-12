@@ -1,0 +1,113 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #000;
+}
+header {
+  width: 100%;
+  background: transparent;
+  box-shadow: none;
+  padding: 2rem 0 1rem 0;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: #ffe082;
+  text-shadow: 0 2px 16px #000;
+}
+header p {
+  margin: 0.5rem 0 0 0;
+  color: #bdbdbd;
+  font-size: 1.2rem;
+  text-shadow: 0 1px 8px #000;
+}
+main {
+  max-width: 600px;
+  width: 100%;
+  background: transparent;
+  margin: 2rem 0;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: none;
+  position: relative;
+  z-index: 1;
+}
+section {
+  margin-bottom: 2rem;
+}
+h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+  color: #90caf9;
+  text-shadow: 0 1px 8px #000;
+}
+ul.social {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1.5rem 0 0 0;
+}
+ul.social li a {
+  color: #90caf9;
+  text-decoration: none;
+  font-size: 1.5rem;
+  transition: color 0.2s;
+  text-shadow: 0 1px 8px #000;
+}
+ul.social li a:hover {
+  color: #ffe082;
+}
+@media (max-width: 700px) {
+  main {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+  header h1 {
+    font-size: 2rem;
+  }
+}
+#solar3d {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+.dough-btn {
+  display: block;
+  width: max-content;
+  margin: 2.5rem auto 2.5rem auto;
+  padding: 0.9rem 2.2rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #222;
+  background: linear-gradient(90deg, #ffe082 60%, #ffd54f 100%);
+  border: none;
+  border-radius: 2rem;
+  box-shadow: 0 2px 16px #0006;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.2s, color 0.2s;
+  z-index: 2;
+  position: fixed;
+  left: 50%;
+  bottom: 2.5rem;
+  transform: translateX(-50%);
+}
+.dough-btn:hover {
+  background: linear-gradient(90deg, #ffd54f 60%, #ffe082 100%);
+  color: #000;
+}
