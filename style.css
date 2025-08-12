@@ -141,62 +141,44 @@ li {
     color: #f5f6fa;
   }
   header {
-    background: rgba(30,32,38,0.7);
+    background: rgba(10,10,10,0.85);
     box-shadow: 0 2px 16px 0 rgba(0,0,0,0.18);
-    border-bottom: 1px solid #23242b;
-  }
-  header h1 {
-    color: #f5f6fa;
-    text-shadow: 0 1px 0 #23242b, 0 2px 8px #000;
-  }
-  header p {
-    color: #bdbdbd;
-    text-shadow: 0 1px 0 #23242b;
+    border-bottom: 1px solid #181920;
   }
   main {
-    background: rgba(30,32,38,0.85);
-    border: 1px solid #23242b;
+    background: rgba(15,15,15,0.95);
+    border: 1px solid #181920;
     box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.10);
   }
-  label {
-    color: #e0e0e0;
-  }
   input[type="text"], input[type="number"] {
-    background: rgba(40,42,50,0.7);
+    background: rgba(20,20,20,0.9);
     color: #f5f6fa;
-    border: 1px solid #444857;
-  caret-color: #0a84ff;
-  }
-  input[type="text"]:focus, input[type="number"]:focus {
-    border: 1.5px solid #0a84ff;
-    box-shadow: 0 0 0 2px #0a84ff33;
+    border: 1px solid #222;
+    caret-color: #0a84ff;
   }
   input[disabled], input[readonly] {
-    background: #23242b;
+    background: #111;
     color: #888;
   }
   button, input[type="button"], input[type="submit"] {
-    background: linear-gradient(90deg, #23242b 0%, #35363c 100%);
+    background: linear-gradient(90deg, #111 0%, #222 100%);
     color: #f5f6fa;
     box-shadow: 0 1px 2px 0 rgba(0,0,0,0.10);
   }
   button:hover, input[type="button"]:hover, input[type="submit"]:hover {
-    background: linear-gradient(90deg, #35363c 0%, #23242b 100%);
+    background: linear-gradient(90deg, #222 0%, #111 100%);
     box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
   }
   ul {
-    background: rgba(40,42,50,0.7);
+    background: rgba(15,15,15,0.9);
     color: #e0e0e0;
   }
-  li {
-    color: #e0e0e0;
-  }
-  .timeModule {
+  li, .timeModule {
     color: #e0e0e0;
   }
   #portion-warning {
     color: #ffe082;
-    background: #3a2e00;
+    background: #181200;
     border: 1px solid #ffe082;
   }
 }
