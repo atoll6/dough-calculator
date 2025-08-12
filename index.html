@@ -159,18 +159,53 @@ function refresh_data() {
         $("#inputRemainingWater").val(remainingWater);
         $("#inputRemainingSalt").val(remainingSalt);
 }
-$( "input" ).keyup(function() {
+// Save all input and checkbox values to localStorage
+function saveFormState() {
+    $("input").each(function() {
+        var $el = $(this);
+        var id = $el.attr("id");
+        if (!id) return;
+        if ($el.attr("type") === "checkbox") {
+            localStorage.setItem("doughcalc_" + id, $el.prop("checked"));
+        } else {
+            localStorage.setItem("doughcalc_" + id, $el.val());
+        }
+    });
+}
+
+// Restore all input and checkbox values from localStorage
+function restoreFormState() {
+    $("input").each(function() {
+        var $el = $(this);
+        var id = $el.attr("id");
+        if (!id) return;
+        if ($el.attr("type") === "checkbox") {
+            var val = localStorage.getItem("doughcalc_" + id);
+            if (val !== null) $el.prop("checked", val === "true");
+        } else {
+            var val = localStorage.getItem("doughcalc_" + id);
+            if (val !== null) $el.val(val);
+        }
+    });
+}
+
+$("input").on("keyup change", function() {
     refresh_data();
+    saveFormState();
 });
-$( "input" ).change(function() {
-    refresh_data();
-});
-$( document ).ready(function() {
+
+$(document).ready(function() {
+    // Set defaults only if not already saved
     var today = dayjs().format('YYYY-MM-DD');
     var defaultTime = (dayjs().hour() + 25) % 24;
     var defaultTimeStr = (defaultTime < 10 ? '0' : '') + defaultTime + ':00';
-    $("#inputDate").val(today);
-    $("#inputTime").val(defaultTimeStr);
+    if (!localStorage.getItem("doughcalc_inputDate")) {
+        $("#inputDate").val(today);
+    }
+    if (!localStorage.getItem("doughcalc_inputTime")) {
+        $("#inputTime").val(defaultTimeStr);
+    }
+    restoreFormState();
     $("#inputDate").flatpickr({
         minDate: "today"
     });
