@@ -107,6 +107,9 @@
         </ul>
     </section>
 </main>
+<div style="width:100%;display:flex;justify-content:center;margin-bottom:2rem;">
+    <button id="resetFormBtn" type="button" style="margin-top:1rem;">New Pizza</button>
+</div>
 <script>
 function refresh_data() {
     var portionSize = parseInt($("#inputPortionSize").val());
@@ -195,6 +198,46 @@ $("input").on("keyup change", function() {
 });
 
 $(document).ready(function() {
+    // Reset button handler
+    $("#resetFormBtn").on("click", function() {
+        // Set all user-editable fields to their default values
+        if (!$("#inputDate").prop("disabled") && !$("#inputDate").prop("readonly")) {
+            var today = dayjs().format('YYYY-MM-DD');
+            $("#inputDate").val(today);
+        }
+        if (!$("#inputTime").prop("disabled") && !$("#inputTime").prop("readonly")) {
+            var defaultTime = (dayjs().hour() + 25) % 24;
+            var defaultTimeStr = (defaultTime < 10 ? '0' : '') + defaultTime + ':00';
+            $("#inputTime").val(defaultTimeStr);
+        }
+        if (!$("#inputPortions").prop("disabled") && !$("#inputPortions").prop("readonly")) {
+            $("#inputPortions").val("2");
+        }
+        if (!$("#inputPortionSize").prop("disabled") && !$("#inputPortionSize").prop("readonly")) {
+            $("#inputPortionSize").val("260");
+        }
+        if (!$("#inputHydration").prop("disabled") && !$("#inputHydration").prop("readonly")) {
+            $("#inputHydration").val("70");
+        }
+        if (!$("#inputSalt").prop("disabled") && !$("#inputSalt").prop("readonly")) {
+            $("#inputSalt").val("3");
+        }
+        // Uncheck all checkboxes
+        $("input[type='checkbox']").prop("checked", false);
+        // Remove saved state
+        Object.keys(localStorage).forEach(function(key) {
+            if (key.startsWith("doughcalc_")) {
+                localStorage.removeItem(key);
+            }
+        });
+        // Optionally, reset date/time to defaults
+        var today = dayjs().format('YYYY-MM-DD');
+        var defaultTime = (dayjs().hour() + 25) % 24;
+        var defaultTimeStr = (defaultTime < 10 ? '0' : '') + defaultTime + ':00';
+        $("#inputDate").val(today);
+        $("#inputTime").val(defaultTimeStr);
+        refresh_data();
+    });
     // Set defaults only if not already saved
     var today = dayjs().format('YYYY-MM-DD');
     var defaultTime = (dayjs().hour() + 25) % 24;
