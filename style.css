@@ -138,31 +138,40 @@ li {
 @media (prefers-color-scheme: dark) {
   body {
     background: #000;
-    color: #f5f6fa;
+    color: #fff;
   }
   header {
     background: rgba(10,10,10,0.85);
     box-shadow: 0 2px 16px 0 rgba(0,0,0,0.18);
     border-bottom: 1px solid #181920;
   }
+  header h1 {
+    color: #fff;
+    text-shadow: 0 1px 0 #222, 0 2px 8px #333;
+  }
+  header p {
+    color: #e0e0e0;
+    text-shadow: 0 1px 0 #222;
+  }
   main {
     background: rgba(15,15,15,0.95);
     border: 1px solid #181920;
     box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.10);
+    color: #fff;
   }
   input[type="text"], input[type="number"] {
     background: rgba(20,20,20,0.9);
-    color: #f5f6fa;
-    border: 1px solid #222;
+    color: #fff;
+    border: 1px solid #444;
     caret-color: #0a84ff;
   }
   input[disabled], input[readonly] {
     background: #111;
-    color: #888;
+    color: #aaa;
   }
   button, input[type="button"], input[type="submit"] {
     background: linear-gradient(90deg, #111 0%, #222 100%);
-    color: #f5f6fa;
+    color: #fff;
     box-shadow: 0 1px 2px 0 rgba(0,0,0,0.10);
   }
   button:hover, input[type="button"]:hover, input[type="submit"]:hover {
@@ -171,10 +180,13 @@ li {
   }
   ul {
     background: rgba(15,15,15,0.9);
-    color: #e0e0e0;
+    color: #fff;
   }
   li, .timeModule {
-    color: #e0e0e0;
+    color: #fff;
+  }
+  label {
+    color: #fff;
   }
   #portion-warning {
     color: #ffe082;
