@@ -107,11 +107,13 @@
         </ul>
     </section>
 </main>
-<div style="position:fixed;top:1rem;left:1rem;z-index:1000;display:flex;align-items:center;">
-    <a href="https://atoll6.github.io/" id="backBtn" style="text-decoration:none;"><button type="button">&#8592; Back</button></a>
-</div>
-<div style="position:fixed;top:1rem;right:1rem;z-index:1000;display:flex;align-items:center;">
-    <button id="resetFormBtn" type="button">New Pizza</button>
+<div class="top-bar">
+    <div class="top-bar-left">
+        <a href="https://atoll6.github.io/" id="backBtn" style="text-decoration:none;"><button type="button">&#8592; Back</button></a>
+    </div>
+    <div class="top-bar-right">
+        <button id="resetFormBtn" type="button">New Pizza</button>
+    </div>
 </div>
 <script>
 function refresh_data() {
