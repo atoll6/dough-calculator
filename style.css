@@ -1,3 +1,8 @@
+/* Use border-box so width:100% includes padding and avoids horizontal overflow */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 /* Fixed top bar for navigation buttons */
 .top-bar {
   position: fixed;
@@ -36,11 +41,9 @@
 }
 
 body {
-  padding-top: 4.5rem;
-}
-body {
   margin: 0;
   padding: 0;
+  padding-top: 4.5rem; /* ensure content isn't hidden behind fixed top bar */
   font-family: 'San Francisco', 'Inter', Arial, sans-serif;
   color: #222;
   min-height: 100vh;
