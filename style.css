@@ -56,33 +56,6 @@ body {
   color-scheme: light dark;
 }
 
-header {
-  width: 100%;
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.06);
-  padding: 2rem 0 1rem 0;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-header h1 {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 700;
-  letter-spacing: -1px;
-  color: #222;
-  text-shadow: 0 1px 0 #fff, 0 2px 8px #e0e0e0;
-}
-
-header p {
-  margin: 0.5rem 0 0 0;
-  color: #888;
-  font-size: 1.2rem;
-  text-shadow: 0 1px 0 #fff;
-}
 
 main {
   max-width: 600px;
@@ -107,7 +80,7 @@ label {
   margin-bottom: 1em;
 }
 
-input[type="text"], input[type="number"] {
+input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
   padding: 0.6em 1em;
   border-radius: 0.7em;
   border: 1px solid #d1d5db;
@@ -119,7 +92,7 @@ input[type="text"], input[type="number"] {
   outline: none;
   margin-top: 0.2em;
 }
-input[type="text"]:focus, input[type="number"]:focus {
+input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus {
   border: 1.5px solid #007aff;
   box-shadow: 0 0 0 2px #007aff22;
 }
@@ -180,26 +153,13 @@ li {
     background: #000;
     color: #fff;
   }
-  header {
-    background: rgba(10,10,10,0.85);
-    box-shadow: 0 2px 16px 0 rgba(0,0,0,0.18);
-    border-bottom: 1px solid #181920;
-  }
-  header h1 {
-    color: #fff;
-    text-shadow: 0 1px 0 #222, 0 2px 8px #333;
-  }
-  header p {
-    color: #e0e0e0;
-    text-shadow: 0 1px 0 #222;
-  }
   main {
     background: rgba(15,15,15,0.95);
     border: 1px solid #181920;
     box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.10);
     color: #fff;
   }
-  input[type="text"], input[type="number"] {
+  input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
     background: rgba(20,20,20,0.9);
     color: #fff;
     border: 1px solid #444;
@@ -239,14 +199,5 @@ li {
   main {
     padding: 1rem;
     margin: 1rem 0;
-  }
-  header h1 {
-    font-size: 2rem;
-  }
-  body {
-    padding-top: 4.5rem;
-  }
-  .fixed-top-btns {
-    top: 3.5rem !important;
   }
 }

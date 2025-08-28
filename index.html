@@ -7,11 +7,6 @@
     <meta name="color-scheme" content="light dark">
     <link rel="shortcut icon" type="image/png" href="favicon.png"/>
     <link rel="stylesheet" href="style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-    <script>dayjs().format()</script>
     <title>Arda's Pizza-dough Calculator</title>
 </head>
 <body>
@@ -20,10 +15,10 @@
     <!-- DateTime Picker -->
     <section class="timeModule">
         <label>Planned Date to Eat
-            <input type="text" id="inputDate">
+            <input type="date" id="inputDate">
         </label>
         <label>Time
-            <input type="text" id="inputTime">
+            <input type="time" id="inputTime">
         </label>
     </section>
     <section>
@@ -31,7 +26,7 @@
             <input type="number" inputmode="numeric" id="inputPortions" value="2"> balls
         </label>
         <label>Portion Size
-            <input type="number" inputmode="numeric" id="inputPortionSize" value="260"> g
+            <input type="number" inputmode="numeric" id="inputPortionSize" value="280"> g
         </label>
         <label>Hydration
             <input type="number" inputmode="numeric" id="inputHydration" value="70"> %
@@ -42,7 +37,7 @@
     </section>
     <section>
     <div id="portion-warning" style="display:none;">
-            The poolish amount of 300:300 is ideal for portions up to 12. For more portions, I recommend splitting the recipe in 2 or more!
+            The poolish amount of 100:100 is ideal for portions up to 12. For more portions, I recommend splitting the recipe in 2 or more!
         </div>
         <h2>Final Result:</h2>
         <label>Total Dough Weight (g)
@@ -116,153 +111,177 @@
     </div>
 </div>
 <script>
-function refresh_data() {
-    var portionSize = parseInt($("#inputPortionSize").val());
-    var portions = parseInt($("#inputPortions").val());
-    var hydration = parseInt($("#inputHydration").val());
-    var salt = parseFloat($("#inputSalt").val());
-    var totalDoughWeight = Math.round( portions * portionSize );
-    var flourWeight = Math.round( totalDoughWeight / ((hydration/100) + (salt/100)+1));
-    var waterWeight = Math.round((hydration / 100) * flourWeight);
-    var saltWeight = Math.round( (salt / 100) * flourWeight);
-    var dateTimeString = $("#inputDate").val() + " " + $("#inputTime").val();
-    var eatDateTime = dayjs(dateTimeString);
-    var step2DateTime = dayjs(eatDateTime).subtract(2, 'hour');
-    var step2StartTime = dayjs(step2DateTime).format("ddd, DD-MMM-YYYY HH:mm");
-    var step2EarliestDateTime = dayjs(eatDateTime).subtract(3, 'hour');
-    var step2EarliestStartTime = dayjs(step2EarliestDateTime).format("ddd, DD-MMM-YYYY HH:mm");
-    $("#labelStep2DateTime").html("<i class='bi bi-clock'></i> Recommended time to start: <b>" + step2EarliestStartTime + "</b> and <b>" + step2StartTime + "</b>");
-    var latestStartDateTime = dayjs(eatDateTime).subtract(17+3, 'hour').format("ddd, DD-MMM-YYYY HH:mm");
-    var earliestStartDateTime = dayjs(eatDateTime).subtract(25+3, 'hour').format("ddd, DD-MMM-YYYY HH:mm");
-    $("#labelDateTimeToStart").html("<i class='bi bi-clock'></i> Recommended time to start: Between <b>" + earliestStartDateTime + "</b> and <b>" + latestStartDateTime + "</b>");
-    if (portions > 12) {
-        $("#portion-warning").show();
-    }
-    else {
-        $("#portion-warning").hide();
-    }
-        // Poolish (starter) is always 300g flour, 300g water, 5g honey, 5g yeast
-        var poolishFlourWeight = 300;
-        var poolishWaterWeight = 300;
-        var poolishHoneyWeight = 5;
-        var poolishYeastWeight = 5;
-
-        // Remaining ingredients
-        var remainingFlour = Math.max(0, Math.round(flourWeight - poolishFlourWeight));
-        var remainingWater = Math.max(0, Math.round(waterWeight - poolishWaterWeight));
-        var remainingSalt = Math.round(saltWeight);
-
-        // Set poolish values in UI
-        $("#inputPoolishFlour").val(poolishFlourWeight);
-        $("#inputPoolishWater").val(poolishWaterWeight);
-        $("#inputPoolishYeast").val(poolishYeastWeight);
-        $("#inputPoolishHoney").val(poolishHoneyWeight);
-
-        // Set remaining values in UI
-        $("#inputTotalDoughWeight").val(totalDoughWeight);
-        $("#inputFlour").val(flourWeight);
-        $("#inputWater").val(waterWeight);
-        $("#inputSaltAmount").val(saltWeight);
-        $("#inputRemainingFlour").val(remainingFlour);
-        $("#inputRemainingWater").val(remainingWater);
-        $("#inputRemainingSalt").val(remainingSalt);
+// Helpers for defaults and formatting
+function pad2(n){ return n < 10 ? '0' + n : '' + n; }
+function defaultDate() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
 }
+function defaultTimeStr() {
+    var d = new Date();
+    var h = (d.getHours() + 25) % 24; // current hour + 1
+    return pad2(h) + ':00';
+}
+function parseLocalDateTime(dateStr, timeStr){
+    var d = dateStr && timeStr ? new Date(dateStr + 'T' + timeStr) : new Date();
+    return d;
+}
+function addHours(date, hours){ return new Date(date.getTime() + hours * 3600000); }
+function fmtDateTime(d){
+    var weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return weekdays[d.getDay()] + ', ' + pad2(d.getDate()) + '-' + months[d.getMonth()] + '-' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+function setDateTimeDefaults() {
+    var dateEl = document.getElementById('inputDate');
+    var timeEl = document.getElementById('inputTime');
+    if (dateEl && !dateEl.disabled && !dateEl.readOnly) dateEl.value = defaultDate();
+    if (timeEl && !timeEl.disabled && !timeEl.readOnly) timeEl.value = defaultTimeStr();
+}
+function setIntValue(id, value) {
+    var el = document.getElementById(id);
+    if (el) el.value = String(Math.round(Number(value)));
+}
+
+function refresh_data() {
+    var portionSize = parseInt(document.getElementById('inputPortionSize').value);
+    var portions = parseInt(document.getElementById('inputPortions').value);
+    var hydration = parseInt(document.getElementById('inputHydration').value);
+    var salt = parseFloat(document.getElementById('inputSalt').value);
+
+    var totalDoughWeight = Math.round(portions * portionSize);
+    var flourWeight = Math.round(totalDoughWeight / ((hydration/100) + (salt/100) + 1));
+    var waterWeight = Math.round((hydration / 100) * flourWeight);
+    var saltWeight = Math.round((salt / 100) * flourWeight);
+
+    var dateStr = document.getElementById('inputDate').value;
+    var timeStr = document.getElementById('inputTime').value;
+    var eatDateTime = parseLocalDateTime(dateStr, timeStr);
+    var step2DateTime = addHours(eatDateTime, -2);
+    var step2StartTime = fmtDateTime(step2DateTime);
+    var step2EarliestDateTime = addHours(eatDateTime, -3);
+    var step2EarliestStartTime = fmtDateTime(step2EarliestDateTime);
+    var step2Label = document.getElementById('labelStep2DateTime');
+    if (step2Label) step2Label.innerHTML = 'Recommended time to start: <b>' + step2EarliestStartTime + '</b> and <b>' + step2StartTime + '</b>';
+
+    var latestStartDateTime = fmtDateTime(addHours(eatDateTime, -(17+3)));
+    var earliestStartDateTime = fmtDateTime(addHours(eatDateTime, -(25+3)));
+    var startLabel = document.getElementById('labelDateTimeToStart');
+    if (startLabel) startLabel.innerHTML = 'Recommended time to start: Between <b>' + earliestStartDateTime + '</b> and <b>' + latestStartDateTime + '</b>';
+
+    var warnEl = document.getElementById('portion-warning');
+    if (warnEl) warnEl.style.display = portions > 12 ? 'block' : 'none';
+
+    // Poolish (starter) is always 100g flour, 100g water, ~1.7g honey, ~1.7g yeast
+    var poolishFlourWeight = 100;
+    var poolishWaterWeight = 100;
+    var poolishHoneyWeight = 1.7;
+    var poolishYeastWeight = 1.7;
+
+    // Remaining ingredients
+    var remainingFlour = Math.max(0, Math.round(flourWeight - poolishFlourWeight));
+    var remainingWater = Math.max(0, Math.round(waterWeight - poolishWaterWeight));
+    var remainingSalt = Math.round(saltWeight);
+
+    // Set poolish values in UI (as whole grams)
+    setIntValue('inputPoolishFlour', poolishFlourWeight);
+    setIntValue('inputPoolishWater', poolishWaterWeight);
+    setIntValue('inputPoolishYeast', poolishYeastWeight);
+    setIntValue('inputPoolishHoney', poolishHoneyWeight);
+
+    // Set remaining values in UI (as whole grams)
+    setIntValue('inputTotalDoughWeight', totalDoughWeight);
+    setIntValue('inputFlour', flourWeight);
+    setIntValue('inputWater', waterWeight);
+    setIntValue('inputSaltAmount', saltWeight);
+    setIntValue('inputRemainingFlour', remainingFlour);
+    setIntValue('inputRemainingWater', remainingWater);
+    setIntValue('inputRemainingSalt', remainingSalt);
+}
+
 // Save all input and checkbox values to localStorage
 function saveFormState() {
-    $("input").each(function() {
-        var $el = $(this);
-        var id = $el.attr("id");
+    document.querySelectorAll('input').forEach(function(el){
+        var id = el.id;
         if (!id) return;
-        if ($el.attr("type") === "checkbox") {
-            localStorage.setItem("doughcalc_" + id, $el.prop("checked"));
+        if (el.type === 'checkbox') {
+            localStorage.setItem('doughcalc_' + id, el.checked);
         } else {
-            localStorage.setItem("doughcalc_" + id, $el.val());
+            localStorage.setItem('doughcalc_' + id, el.value);
         }
     });
 }
 
 // Restore all input and checkbox values from localStorage
 function restoreFormState() {
-    $("input").each(function() {
-        var $el = $(this);
-        var id = $el.attr("id");
+    document.querySelectorAll('input').forEach(function(el){
+        var id = el.id;
         if (!id) return;
-        if ($el.attr("type") === "checkbox") {
-            var val = localStorage.getItem("doughcalc_" + id);
-            if (val !== null) $el.prop("checked", val === "true");
+        var val = localStorage.getItem('doughcalc_' + id);
+        if (val === null) return;
+        if (el.type === 'checkbox') {
+            el.checked = (val === 'true');
         } else {
-            var val = localStorage.getItem("doughcalc_" + id);
-            if (val !== null) $el.val(val);
+            el.value = val;
         }
     });
 }
 
-$("input").on("keyup change", function() {
-    refresh_data();
-    saveFormState();
-});
-
-$(document).ready(function() {
-    // Reset button handler
-    $("#resetFormBtn").on("click", function() {
-        // Set all user-editable fields to their default values
-        if (!$("#inputDate").prop("disabled") && !$("#inputDate").prop("readonly")) {
-            var today = dayjs().format('YYYY-MM-DD');
-            $("#inputDate").val(today);
-        }
-        if (!$("#inputTime").prop("disabled") && !$("#inputTime").prop("readonly")) {
-            var defaultTime = (dayjs().hour() + 25) % 24;
-            var defaultTimeStr = (defaultTime < 10 ? '0' : '') + defaultTime + ':00';
-            $("#inputTime").val(defaultTimeStr);
-        }
-        if (!$("#inputPortions").prop("disabled") && !$("#inputPortions").prop("readonly")) {
-            $("#inputPortions").val("2");
-        }
-        if (!$("#inputPortionSize").prop("disabled") && !$("#inputPortionSize").prop("readonly")) {
-            $("#inputPortionSize").val("260");
-        }
-        if (!$("#inputHydration").prop("disabled") && !$("#inputHydration").prop("readonly")) {
-            $("#inputHydration").val("70");
-        }
-        if (!$("#inputSalt").prop("disabled") && !$("#inputSalt").prop("readonly")) {
-            $("#inputSalt").val("3");
-        }
-        // Uncheck all checkboxes
-        $("input[type='checkbox']").prop("checked", false);
-        // Remove saved state
-        Object.keys(localStorage).forEach(function(key) {
-            if (key.startsWith("doughcalc_")) {
-                localStorage.removeItem(key);
-            }
+function wireInputListeners() {
+    document.querySelectorAll('input').forEach(function(el){
+        el.addEventListener('input', function(){
+            refresh_data();
+            saveFormState();
         });
-        // Optionally, reset date/time to defaults
-        var today = dayjs().format('YYYY-MM-DD');
-        var defaultTime = (dayjs().hour() + 25) % 24;
-        var defaultTimeStr = (defaultTime < 10 ? '0' : '') + defaultTime + ':00';
-        $("#inputDate").val(today);
-        $("#inputTime").val(defaultTimeStr);
-        refresh_data();
+        el.addEventListener('change', function(){
+            refresh_data();
+            saveFormState();
+        });
     });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    // Reset button handler
+    var resetBtn = document.getElementById('resetFormBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(){
+            var portionsEl = document.getElementById('inputPortions');
+            if (portionsEl && !portionsEl.disabled && !portionsEl.readOnly) portionsEl.value = '2';
+            var portionSizeEl = document.getElementById('inputPortionSize');
+            if (portionSizeEl && !portionSizeEl.disabled && !portionSizeEl.readOnly) portionSizeEl.value = '280';
+            var hydrationEl = document.getElementById('inputHydration');
+            if (hydrationEl && !hydrationEl.disabled && !hydrationEl.readOnly) hydrationEl.value = '70';
+            var saltEl = document.getElementById('inputSalt');
+            if (saltEl && !saltEl.disabled && !saltEl.readOnly) saltEl.value = '3';
+
+            // Uncheck all checkboxes
+            document.querySelectorAll("input[type='checkbox']").forEach(function(cb){ cb.checked = false; });
+
+            // Remove saved state
+            Object.keys(localStorage).forEach(function(key){ if (key.startsWith('doughcalc_')) localStorage.removeItem(key); });
+
+            // Reset date/time to defaults
+            setDateTimeDefaults();
+            refresh_data();
+        });
+    }
+
     // Set defaults only if not already saved
-    var today = dayjs().format('YYYY-MM-DD');
-    var defaultTime = (dayjs().hour() + 25) % 24;
-    var defaultTimeStr = (defaultTime < 10 ? '0' : '') + defaultTime + ':00';
-    if (!localStorage.getItem("doughcalc_inputDate")) {
-        $("#inputDate").val(today);
+    if (!localStorage.getItem('doughcalc_inputDate')) {
+        document.getElementById('inputDate').value = defaultDate();
     }
-    if (!localStorage.getItem("doughcalc_inputTime")) {
-        $("#inputTime").val(defaultTimeStr);
+    if (!localStorage.getItem('doughcalc_inputTime')) {
+        document.getElementById('inputTime').value = defaultTimeStr();
     }
+
+    // Ensure date cannot be set in the past
+    var dateEl = document.getElementById('inputDate');
+    if (dateEl) dateEl.min = defaultDate();
+
+    // Restore state and wire listeners
     restoreFormState();
-    $("#inputDate").flatpickr({
-        minDate: "today"
-    });
-    $("#inputTime").flatpickr({
-        enableTime: true,
-        noCalendar: true,
-        dateFormat: "H:i",
-        time_24hr: true
-    });
+    wireInputListeners();
+
     refresh_data();
 });
 </script>
