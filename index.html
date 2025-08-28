@@ -37,7 +37,7 @@
     </section>
     <section>
     <div id="portion-warning" style="display:none;">
-            The poolish amount of 100:100 is ideal for portions up to 12. For more portions, I recommend splitting the recipe in 2 or more!
+            The poolish amount is chosen automatically (100:100, 200:200, or 300:300) to use as much as possible for your batch. For more than 12 portions, consider splitting the recipe into 2 or more batches.
         </div>
         <h2>Final Result:</h2>
         <label>Total Dough Weight (g)
@@ -125,7 +125,7 @@ function defaultDate() {
 }
 function defaultTimeStr() {
     var d = new Date();
-    var h = (d.getHours() + 25) % 24; // current hour + 1
+    var h = (d.getHours() + 1) % 24; // current hour + 1
     return pad2(h) + ':00';
 }
 function parseLocalDateTime(dateStr, timeStr){
@@ -156,9 +156,11 @@ function refresh_data() {
     var salt = parseFloat(document.getElementById('inputSalt').value);
 
     var totalDoughWeight = Math.round(portions * portionSize);
-    var flourWeight = Math.round(totalDoughWeight / ((hydration/100) + (salt/100) + 1));
-    var waterWeight = Math.round((hydration / 100) * flourWeight);
-    var saltWeight = Math.round((salt / 100) * flourWeight);
+    var h = (hydration / 100);
+    var s = (salt / 100); // salt as % of flour
+    var flourWeight = Math.round(totalDoughWeight / (1 + h + s));
+    var waterWeight = Math.round(h * flourWeight);
+    var saltWeight = Math.round(s * flourWeight);
 
     var dateStr = document.getElementById('inputDate').value;
     var timeStr = document.getElementById('inputTime').value;
@@ -168,7 +170,7 @@ function refresh_data() {
     var step2EarliestDateTime = addHours(eatDateTime, -3);
     var step2EarliestStartTime = fmtDateTime(step2EarliestDateTime);
     var step2Label = document.getElementById('labelStep2DateTime');
-    if (step2Label) step2Label.innerHTML = 'Recommended time to start: <b>' + step2EarliestStartTime + '</b> and <b>' + step2StartTime + '</b>';
+    if (step2Label) step2Label.innerHTML = 'Recommended time to start: between <b>' + step2EarliestStartTime + '</b> and <b>' + step2StartTime + '</b>';
 
     var latestStartDateTime = fmtDateTime(addHours(eatDateTime, -(17+3)));
     var earliestStartDateTime = fmtDateTime(addHours(eatDateTime, -(25+3)));
@@ -178,16 +180,28 @@ function refresh_data() {
     var warnEl = document.getElementById('portion-warning');
     if (warnEl) warnEl.style.display = portions > 12 ? 'block' : 'none';
 
-    // Poolish (starter) is always 100g flour, 100g water, ~1.7g honey, ~1.7g yeast
-    var poolishFlourWeight = 100;
-    var poolishWaterWeight = 100;
-    var poolishHoneyWeight = 1.7;
-    var poolishYeastWeight = 1.7;
+    // Decide poolish size: pick the largest of [300, 200, 100] that fits within both total flour and total water
+    var candidates = [300, 200, 100];
+    var poolishFlourWeight = 0;
+    for (var i = 0; i < candidates.length; i++) {
+        var opt = candidates[i];
+        if (opt <= flourWeight && opt <= waterWeight) { // ensure remaining flour and water are non-negative
+            poolishFlourWeight = opt;
+            break;
+        }
+    }
+    var poolishWaterWeight = poolishFlourWeight; // poolish is 100% hydration
 
+    // Poolish yeast & honey: 1.5% of poolish flour
+    // Yeast scales by type (fresh ≈ 3× instant dry); honey does not
+    var idyPct = 0.015;   // 1.5% instant dry
+    var honeyPct = 0.015; // 1.5% honey
     // Yeast conversion: fresh yeast ~3x instant dry
     var yeastTypeEl = document.getElementById('inputYeastType');
     var yeastType = yeastTypeEl ? yeastTypeEl.value : 'instant_dry';
     var yeastFactor = yeastType === 'fresh' ? 3 : 1;
+    var poolishHoneyWeight = poolishFlourWeight * honeyPct;
+    var poolishYeastWeight = poolishFlourWeight * idyPct * yeastFactor;
 
     // Remaining ingredients
     var remainingFlour = Math.max(0, Math.round(flourWeight - poolishFlourWeight));
@@ -197,7 +211,7 @@ function refresh_data() {
     // Set poolish values in UI (as whole grams)
     setIntValue('inputPoolishFlour', poolishFlourWeight);
     setIntValue('inputPoolishWater', poolishWaterWeight);
-    setIntValue('inputPoolishYeast', poolishYeastWeight * yeastFactor);
+    setIntValue('inputPoolishYeast', poolishYeastWeight);
     setIntValue('inputPoolishHoney', poolishHoneyWeight);
 
     // Set remaining values in UI (as whole grams)
@@ -250,21 +264,13 @@ function restoreFormState() {
 }
 
 function wireInputListeners() {
+    function sync() { refresh_data(); saveFormState(); }
     document.querySelectorAll('input').forEach(function(el){
-        el.addEventListener('input', function(){
-            refresh_data();
-            saveFormState();
-        });
-        el.addEventListener('change', function(){
-            refresh_data();
-            saveFormState();
-        });
+        el.addEventListener('input', sync);
+        el.addEventListener('change', sync);
     });
     document.querySelectorAll('select').forEach(function(el){
-        el.addEventListener('change', function(){
-            refresh_data();
-            saveFormState();
-        });
+        el.addEventListener('change', sync);
     });
 }
 
