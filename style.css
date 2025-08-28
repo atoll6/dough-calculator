@@ -80,7 +80,7 @@ label {
   margin-bottom: 1em;
 }
 
-input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
+input[type="text"], input[type="number"], input[type="date"], input[type="time"], select {
   padding: 0.6em 1em;
   border-radius: 0.7em;
   border: 1px solid #d1d5db;
@@ -92,7 +92,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="time"]
   outline: none;
   margin-top: 0.2em;
 }
-input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus {
+input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus, select:focus {
   border: 1.5px solid #007aff;
   box-shadow: 0 0 0 2px #007aff22;
 }
@@ -159,7 +159,7 @@ li {
     box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.10);
     color: #fff;
   }
-  input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
+  input[type="text"], input[type="number"], input[type="date"], input[type="time"], select {
     background: rgba(20,20,20,0.9);
     color: #fff;
     border: 1px solid #444;

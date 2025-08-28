@@ -62,7 +62,13 @@
         <label>Water (g)
             <input type="text" id="inputPoolishWater" disabled readonly>
         </label>
-        <label>Instant Yeast (g)
+        <label>Yeast Type
+            <select id="inputYeastType">
+                <option value="instant_dry" selected>Instant Dry</option>
+                <option value="fresh">Fresh (Cake)</option>
+            </select>
+        </label>
+        <label>Yeast (g)
             <input type="text" id="inputPoolishYeast" disabled readonly>
         </label>
         <label>Honey (g)
@@ -178,6 +184,11 @@ function refresh_data() {
     var poolishHoneyWeight = 1.7;
     var poolishYeastWeight = 1.7;
 
+    // Yeast conversion: fresh yeast ~3x instant dry
+    var yeastTypeEl = document.getElementById('inputYeastType');
+    var yeastType = yeastTypeEl ? yeastTypeEl.value : 'instant_dry';
+    var yeastFactor = yeastType === 'fresh' ? 3 : 1;
+
     // Remaining ingredients
     var remainingFlour = Math.max(0, Math.round(flourWeight - poolishFlourWeight));
     var remainingWater = Math.max(0, Math.round(waterWeight - poolishWaterWeight));
@@ -186,7 +197,7 @@ function refresh_data() {
     // Set poolish values in UI (as whole grams)
     setIntValue('inputPoolishFlour', poolishFlourWeight);
     setIntValue('inputPoolishWater', poolishWaterWeight);
-    setIntValue('inputPoolishYeast', poolishYeastWeight);
+    setIntValue('inputPoolishYeast', poolishYeastWeight * yeastFactor);
     setIntValue('inputPoolishHoney', poolishHoneyWeight);
 
     // Set remaining values in UI (as whole grams)
@@ -199,7 +210,7 @@ function refresh_data() {
     setIntValue('inputRemainingSalt', remainingSalt);
 }
 
-// Save all input and checkbox values to localStorage
+// Save all input, select, and checkbox values to localStorage
 function saveFormState() {
     document.querySelectorAll('input').forEach(function(el){
         var id = el.id;
@@ -210,9 +221,14 @@ function saveFormState() {
             localStorage.setItem('doughcalc_' + id, el.value);
         }
     });
+    document.querySelectorAll('select').forEach(function(el){
+        var id = el.id;
+        if (!id) return;
+        localStorage.setItem('doughcalc_' + id, el.value);
+    });
 }
 
-// Restore all input and checkbox values from localStorage
+// Restore all input, select, and checkbox values from localStorage
 function restoreFormState() {
     document.querySelectorAll('input').forEach(function(el){
         var id = el.id;
@@ -225,6 +241,12 @@ function restoreFormState() {
             el.value = val;
         }
     });
+    document.querySelectorAll('select').forEach(function(el){
+        var id = el.id;
+        if (!id) return;
+        var val = localStorage.getItem('doughcalc_' + id);
+        if (val !== null) el.value = val;
+    });
 }
 
 function wireInputListeners() {
@@ -233,6 +255,12 @@ function wireInputListeners() {
             refresh_data();
             saveFormState();
         });
+        el.addEventListener('change', function(){
+            refresh_data();
+            saveFormState();
+        });
+    });
+    document.querySelectorAll('select').forEach(function(el){
         el.addEventListener('change', function(){
             refresh_data();
             saveFormState();
@@ -262,6 +290,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
             // Reset date/time to defaults
             setDateTimeDefaults();
+            var yeastTypeEl = document.getElementById('inputYeastType');
+            if (yeastTypeEl && !yeastTypeEl.disabled) yeastTypeEl.value = 'instant_dry';
             refresh_data();
         });
     }
