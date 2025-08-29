@@ -55,6 +55,10 @@
     </section>
     <section>
         <h2>Step 1 - Make the poolish:</h2>
+        <div id="poolish-lock-warning" style="display:none;">
+            Locked poolish (<b>Flour: <span id="warnPoolishFlour">0</span> g</b>, <b>Water: <span id="warnPoolishWater">0</span> g</b>) exceeds current totals.
+            Increase portions/size or <button id="unlockPoolishBtn" type="button">Unlock poolish</button> to recalculate automatically.
+        </div>
         <p class="timeModule" id="labelDateTimeToStart"></p>
         <label>Flour (g)
             <input type="text" id="inputPoolishFlour" disabled readonly>
@@ -149,6 +153,29 @@ function setIntValue(id, value) {
     if (el) el.value = String(Math.round(Number(value)));
 }
 
+// Poolish lock helpers (persisted in localStorage)
+function isPoolishLocked() {
+    return localStorage.getItem('doughcalc_poolishLocked') === 'true';
+}
+function lockPoolish(flour, water) {
+    localStorage.setItem('doughcalc_poolishLocked', 'true');
+    localStorage.setItem('doughcalc_lockedPoolishFlour', String(parseInt(flour || 0)));
+    localStorage.setItem('doughcalc_lockedPoolishWater', String(parseInt(water || flour || 0)));
+}
+function unlockPoolish() {
+    localStorage.removeItem('doughcalc_poolishLocked');
+    localStorage.removeItem('doughcalc_lockedPoolishFlour');
+    localStorage.removeItem('doughcalc_lockedPoolishWater');
+}
+function getLockedPoolishFlour() {
+    return parseInt(localStorage.getItem('doughcalc_lockedPoolishFlour') || '0');
+}
+function getLockedPoolishWater() {
+    var f = getLockedPoolishFlour();
+    var w = parseInt(localStorage.getItem('doughcalc_lockedPoolishWater') || String(f));
+    return isNaN(w) ? f : w;
+}
+
 function refresh_data() {
     var portionSize = parseInt(document.getElementById('inputPortionSize').value);
     var portions = parseInt(document.getElementById('inputPortions').value);
@@ -158,9 +185,11 @@ function refresh_data() {
     var totalDoughWeight = Math.round(portions * portionSize);
     var h = (hydration / 100);
     var s = (salt / 100); // salt as % of flour
-    var flourWeight = Math.round(totalDoughWeight / (1 + h + s));
-    var waterWeight = Math.round(h * flourWeight);
-    var saltWeight = Math.round(s * flourWeight);
+
+    // Initial estimate without additives (honey + yeast) to seed candidate selection
+    var flourWeight = totalDoughWeight / (1 + h + s);
+    var waterWeight = h * flourWeight;
+    var saltWeight = s * flourWeight;
 
     var dateStr = document.getElementById('inputDate').value;
     var timeStr = document.getElementById('inputTime').value;
@@ -180,26 +209,62 @@ function refresh_data() {
     var warnEl = document.getElementById('portion-warning');
     if (warnEl) warnEl.style.display = portions > 12 ? 'block' : 'none';
 
-    // Decide poolish size: pick the largest of [300, 200, 100] that fits within both total flour and total water
-    var candidates = [300, 200, 100];
+    // Decide poolish size (iterate once to incorporate additive mass while unlocked)
     var poolishFlourWeight = 0;
-    for (var i = 0; i < candidates.length; i++) {
-        var opt = candidates[i];
-        if (opt <= flourWeight && opt <= waterWeight) { // ensure remaining flour and water are non-negative
-            poolishFlourWeight = opt;
-            break;
-        }
-    }
-    var poolishWaterWeight = poolishFlourWeight; // poolish is 100% hydration
-
-    // Poolish yeast & honey: 1.5% of poolish flour
-    // Yeast scales by type (fresh ≈ 3× instant dry); honey does not
-    var idyPct = 0.015;   // 1.5% instant dry
-    var honeyPct = 0.015; // 1.5% honey
-    // Yeast conversion: fresh yeast ~3x instant dry
+    var poolishWaterWeight = 0;
     var yeastTypeEl = document.getElementById('inputYeastType');
     var yeastType = yeastTypeEl ? yeastTypeEl.value : 'instant_dry';
-    var yeastFactor = yeastType === 'fresh' ? 3 : 1;
+    var idyPct = 0.015;   // 1.5% instant dry
+    var honeyPct = 0.015; // 1.5% honey
+    var yeastFactor = yeastType === 'fresh' ? 3 : 1; // fresh yeast ~3x instant dry
+
+    function chooseCandidate(flw, wat) {
+        var candidates = [300, 200, 100];
+        for (var i = 0; i < candidates.length; i++) {
+            var opt = candidates[i];
+            if (opt <= flw && opt <= wat) return opt;
+        }
+        return 0;
+    }
+
+    if (isPoolishLocked()) {
+        poolishFlourWeight = getLockedPoolishFlour();
+        poolishWaterWeight = getLockedPoolishWater();
+    // Compute additives from locked poolish and correct flour/water/salt so total matches target
+    var addHoneyL = poolishFlourWeight * honeyPct;
+    var addYeastL = poolishFlourWeight * idyPct * yeastFactor;
+    flourWeight = (totalDoughWeight - (addHoneyL + addYeastL)) / (1 + h + s);
+    waterWeight = h * flourWeight;
+    saltWeight = s * flourWeight;
+    } else {
+        // Pass 1: pick using initial estimate
+        poolishFlourWeight = chooseCandidate(flourWeight, waterWeight);
+        poolishWaterWeight = poolishFlourWeight;
+
+        // Compute additives from chosen poolish
+        var addHoney = poolishFlourWeight * honeyPct;
+        var addYeast = poolishFlourWeight * idyPct * yeastFactor;
+
+        // Correct flour/water/salt so total matches target once additives are included
+        flourWeight = (totalDoughWeight - (addHoney + addYeast)) / (1 + h + s);
+        waterWeight = h * flourWeight;
+        saltWeight = s * flourWeight;
+
+        // Pass 2: ensure candidate still fits after correction
+        var correctedCandidate = chooseCandidate(flourWeight, waterWeight);
+        if (correctedCandidate !== poolishFlourWeight) {
+            poolishFlourWeight = correctedCandidate;
+            poolishWaterWeight = poolishFlourWeight;
+            // Recompute corrections with new additives (single extra pass is sufficient given coarse steps)
+            addHoney = poolishFlourWeight * honeyPct;
+            addYeast = poolishFlourWeight * idyPct * yeastFactor;
+            flourWeight = (totalDoughWeight - (addHoney + addYeast)) / (1 + h + s);
+            waterWeight = h * flourWeight;
+            saltWeight = s * flourWeight;
+        }
+    }
+
+    // Poolish yeast & honey: 1.5% of poolish flour (using chosen/locked poolish)
     var poolishHoneyWeight = poolishFlourWeight * honeyPct;
     var poolishYeastWeight = poolishFlourWeight * idyPct * yeastFactor;
 
@@ -222,6 +287,19 @@ function refresh_data() {
     setIntValue('inputRemainingFlour', remainingFlour);
     setIntValue('inputRemainingWater', remainingWater);
     setIntValue('inputRemainingSalt', remainingSalt);
+
+    // Show/hide warning if locked poolish exceeds current totals
+    var warnEl = document.getElementById('poolish-lock-warning');
+    if (warnEl) {
+        var tooBig = isPoolishLocked() && (poolishFlourWeight > flourWeight || poolishWaterWeight > waterWeight);
+        warnEl.style.display = tooBig ? 'block' : 'none';
+        if (tooBig) {
+            var wf = document.getElementById('warnPoolishFlour');
+            var ww = document.getElementById('warnPoolishWater');
+            if (wf) wf.textContent = String(Math.round(poolishFlourWeight));
+            if (ww) ww.textContent = String(Math.round(poolishWaterWeight));
+        }
+    }
 }
 
 // Save all input, select, and checkbox values to localStorage
@@ -265,13 +343,49 @@ function restoreFormState() {
 
 function wireInputListeners() {
     function sync() { refresh_data(); saveFormState(); }
+    // Special handling for poolish step checkboxes to lock/unlock poolish
+    var step1 = document.getElementById('poolish-step1');
+    var step2 = document.getElementById('poolish-step2');
+    function onPoolishStepChanged() {
+        var anyChecked = (step1 && step1.checked) || (step2 && step2.checked);
+        if (anyChecked) {
+            // Lock to the currently displayed poolish values
+            var pf = parseInt(document.getElementById('inputPoolishFlour').value || '0');
+            var pw = parseInt(document.getElementById('inputPoolishWater').value || String(pf));
+            lockPoolish(pf, pw);
+        } else {
+            // Unlock when both are unchecked
+            unlockPoolish();
+        }
+        refresh_data();
+        saveFormState();
+    }
+    if (step1) step1.addEventListener('change', onPoolishStepChanged);
+    if (step2) step2.addEventListener('change', onPoolishStepChanged);
+
+    // Generic listeners for remaining inputs (skip the two poolish checkboxes to avoid double handling)
     document.querySelectorAll('input').forEach(function(el){
+        if (el.id === 'poolish-step1' || el.id === 'poolish-step2') return;
         el.addEventListener('input', sync);
         el.addEventListener('change', sync);
     });
     document.querySelectorAll('select').forEach(function(el){
         el.addEventListener('change', sync);
     });
+}
+
+function ensurePoolishLockConsistency() {
+    var step1 = document.getElementById('poolish-step1');
+    var step2 = document.getElementById('poolish-step2');
+    var anyChecked = (step1 && step1.checked) || (step2 && step2.checked);
+    if (anyChecked && !isPoolishLocked()) {
+        // Lock to current displayed values
+        var pf = parseInt(document.getElementById('inputPoolishFlour').value || '0');
+        var pw = parseInt(document.getElementById('inputPoolishWater').value || String(pf));
+        lockPoolish(pf, pw);
+    } else if (!anyChecked && isPoolishLocked()) {
+        unlockPoolish();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function(){
@@ -317,8 +431,24 @@ document.addEventListener('DOMContentLoaded', function(){
     // Restore state and wire listeners
     restoreFormState();
     wireInputListeners();
-
+    // Compute once, then enforce lock from checkboxes if needed, then compute again
     refresh_data();
+    ensurePoolishLockConsistency();
+    refresh_data();
+
+    // Unlock poolish button (optional UX helper)
+    var unlockBtn = document.getElementById('unlockPoolishBtn');
+    if (unlockBtn) {
+        unlockBtn.addEventListener('click', function(){
+            var cb1 = document.getElementById('poolish-step1');
+            var cb2 = document.getElementById('poolish-step2');
+            if (cb1) cb1.checked = false;
+            if (cb2) cb2.checked = false;
+            unlockPoolish();
+            refresh_data();
+            saveFormState();
+        });
+    }
 });
 </script>
 </body>
