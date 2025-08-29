@@ -1,206 +1,194 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <meta charset="utf-8">
     <meta name="author" content="Arda Tolan">
     <meta name="description" content="A Pizza-dough calculator">
-    <meta name="viewport" content="width=device-width">
-    <!doctype html>
-    <html lang="en">
-    <head>
-            <meta charset="utf-8">
-            <meta name="author" content="Arda Tolan">
-            <meta name="description" content="A Pizza-dough calculator">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <meta name="color-scheme" content="light dark">
-            <link rel="shortcut icon" type="image/png" href="favicon.png"/>
-            <link rel="stylesheet" href="style.css">
-            <title>Arda's Pizza-dough Calculator</title>
-        </head>
-        <body>
-            <main>
-                <h2>Original 24-hour Pizza Dough</h2>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+    <link rel="stylesheet" href="style.css">
+    <title>Arda's Pizza-dough Calculator</title>
+  
+</head>
+<body>
+    <main>
+        <h2>Original 24-hour Pizza Dough</h2>
 
-                <!-- Stepper -->
-                <ol id="stepper" class="stepper" aria-label="Steps">
-                    <li data-step="1">Plan</li>
-                    <li data-step="2">Poolish</li>
-                    <li data-step="3">Final Mix</li>
-                    <li data-step="4">Final Steps</li>
-                </ol>
+        <!-- Stepper -->
+        <ol id="stepper" class="stepper" aria-label="Steps">
+            <li data-step="1">Plan</li>
+            <li data-step="2">Poolish</li>
+            <li data-step="3">Final Mix</li>
+            <li data-step="4">Final Steps</li>
+        </ol>
 
-                <div id="wizard" class="wizard">
-                    <!-- Page 1: Planning & Inputs -->
-                    <section class="page" id="page-1" aria-labelledby="page-1-title">
-                        <h3 id="page-1-title" class="visually-hidden">Plan</h3>
-                        <div class="timeModule">
-                            <label for="inputDate">Planned Date to Eat
-                                <input type="date" id="inputDate" />
-                            </label>
-                            <label for="inputTime">Time
-                                <input type="time" id="inputTime" />
-                            </label>
-                        </div>
-                        <div>
-                            <label for="inputPortions">Portions
-                                <input type="number" id="inputPortions" min="1" step="1" value="2" />
-                            </label>
-                            <label for="inputPortionSize">Portion Size (g)
-                                <input type="number" id="inputPortionSize" min="1" step="1" value="280" />
-                            </label>
-                            <label for="inputHydration">Hydration (%)
-                                <input type="number" id="inputHydration" min="50" max="85" step="1" value="70" />
-                            </label>
-                            <label for="inputSalt">Salt (% of flour)
-                                <input type="number" id="inputSalt" min="1" max="4" step="0.1" value="3" />
-                            </label>
-                        </div>
-                        <div id="portion-warning" style="display:none;">
-                            Large batch warning: consider splitting into multiple batches for easier handling.
-                        </div>
-                        <div id="page-1-errors" class="nav-error" style="display:none;"></div>
-                    </section>
-
-                    <!-- Page 2: Poolish -->
-                    <section class="page" id="page-2" aria-labelledby="page-2-title">
-                        <h3 id="page-2-title">Step 1 - Make the poolish</h3>
-                        <div id="poolish-lock-warning" style="display:none;">
-                            Locked poolish is too large for current totals (<span id="warnPoolishFlour"></span> g flour / <span id="warnPoolishWater"></span> g water). Adjust inputs or unlock.
-                        </div>
-                        <p class="timeModule" id="labelDateTimeToStart"></p>
-
-                        <label for="inputPoolishFlour">Flour (g)
-                            <input type="number" id="inputPoolishFlour" readonly />
-                        </label>
-                        <label for="inputPoolishWater">Water (g)
-                            <input type="number" id="inputPoolishWater" readonly />
-                        </label>
-                        <label for="inputYeastType">Yeast Type
-                            <select id="inputYeastType">
-                                <option value="instant_dry">Instant dry</option>
-                                <option value="fresh">Fresh</option>
-                            </select>
-                        </label>
-                        <label for="inputPoolishYeast">Yeast (g)
-                            <input type="number" id="inputPoolishYeast" readonly />
-                        </label>
-                        <label for="inputPoolishHoney">Honey (g)
-                            <input type="number" id="inputPoolishHoney" readonly />
-                        </label>
-
-                        <ul>
-                            <li><label><input type="checkbox" id="poolish-step1"> Mix flour and water, then add yeast and honey.</label></li>
-                            <li><label><input type="checkbox" id="poolish-step2"> Cover and ferment at room temp until doubled.</label></li>
-                        </ul>
-                        <button type="button" id="unlockPoolishBtn">Unlock Poolish</button>
-                    </section>
-
-                    <!-- Page 3: Final Mix -->
-                    <section class="page" id="page-3" aria-labelledby="page-3-title">
-                        <h3 id="page-3-title">Step 2 - Final Mix</h3>
-                        <p class="timeModule" id="labelStep2DateTime"></p>
-                        <ul>
-                            <li>Combine poolish with remaining flour and water, rest, then knead.</li>
-                        </ul>
-                        <label for="inputRemainingFlour">Flour (g)
-                            <input type="number" id="inputRemainingFlour" readonly />
-                        </label>
-                        <label for="inputRemainingWater">Water (g)
-                            <input type="number" id="inputRemainingWater" readonly />
-                        </label>
-                        <label for="inputRemainingSalt">Salt (g)
-                            <input type="number" id="inputRemainingSalt" readonly />
-                        </label>
-                        <label><input type="checkbox" id="step2"> I completed the final mix.</label>
-                    </section>
-
-                    <!-- Page 4: Final Steps -->
-                    <section class="page" id="page-4" aria-labelledby="page-4-title">
-                        <h3 id="page-4-title">Final Steps</h3>
-                        <ul>
-                            <li><label><input type="checkbox"> Bulk ferment until ~50% rise.</label></li>
-                            <li><label><input type="checkbox"> Ball and cold-proof.</label></li>
-                            <li><label><input type="checkbox"> Bring to room temp, then bake.</label></li>
-                        </ul>
-                    </section>
+        <div id="wizard" class="wizard">
+            <!-- Page 1: Planning & Inputs -->
+            <!-- Purpose: Collect date/time and dough parameters for calculations -->
+            <section class="page" id="page-1" aria-labelledby="page-1-title">
+                <h3 id="page-1-title" class="visually-hidden">Plan</h3>
+                <div class="timeModule">
+                    <label for="inputDate">Planned Date to Eat
+                        <input type="date" id="inputDate" />
+                    </label>
+                    <label for="inputTime">Time
+                        <input type="time" id="inputTime" />
+                    </label>
                 </div>
-
-                <!-- Wizard navigation -->
-                <div class="wizard-nav">
-                    <button type="button" id="prevStepBtn">Back</button>
-                    <div class="wizard-spacer"></div>
-                    <div id="nav-error" class="nav-error" aria-live="polite"></div>
-                    <button type="button" id="nextStepBtn">Next</button>
+                <div>
+                    <label for="inputPortions">Portions
+                        <input type="number" id="inputPortions" min="1" step="1" value="2" inputmode="numeric" pattern="[0-9]*" />
+                    </label>
+                    <label for="inputPortionSize">Portion Size (g)
+                        <input type="number" id="inputPortionSize" min="1" step="1" value="280" inputmode="numeric" pattern="[0-9]*" />
+                    </label>
+                    <label for="inputHydration">Hydration (%)
+                        <input type="number" id="inputHydration" min="50" max="85" step="1" value="70" inputmode="numeric" pattern="[0-9]*" />
+                    </label>
+                    <label for="inputSalt">Salt (% of flour)
+                        <input type="number" id="inputSalt" min="1" max="4" step="0.1" value="3" inputmode="decimal" />
+                    </label>
                 </div>
-            </main>
-
-            <!-- Totals Modal -->
-            <div id="totalsModal" class="modal" hidden>
-                <div class="modal-backdrop" data-close="true"></div>
-                <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="totals-title">
-                    <div class="modal-header">
-                        <h3 id="totals-title">Batch totals</h3>
-                        <button type="button" id="closeTotalsBtn" aria-label="Close">✕</button>
-                    </div>
-                    <div class="summary-grid">
-                        <label for="inputTotalDoughWeight">Total Dough Weight (g)
-                            <input type="number" id="inputTotalDoughWeight" readonly />
-                        </label>
-                        <label for="inputFlour">Total Flour (g)
-                            <input type="number" id="inputFlour" readonly />
-                        </label>
-                        <label for="inputWater">Total Water (g)
-                            <input type="number" id="inputWater" readonly />
-                        </label>
-                        <label for="inputSaltAmount">Total Salt (g)
-                            <input type="number" id="inputSaltAmount" readonly />
-                        </label>
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" id="closeTotalsBtn2">Close</button>
-                    </div>
+                <div id="portion-warning" style="display:none;">
+                    Large batch warning: consider splitting into multiple batches for easier handling.
                 </div>
+                <div id="page-1-errors" class="nav-error" style="display:none;"></div>
+            </section>
+
+            <!-- Page 2: Poolish -->
+            <!-- Purpose: Show poolish ingredients and steps; locking happens after all 3 steps -->
+            <section class="page" id="page-2" aria-labelledby="page-2-title">
+                <h3 id="page-2-title">Step 1 - Make the poolish</h3>
+                <p class="timeModule" id="labelDateTimeToStart"></p>
+
+                <label for="inputPoolishFlour">Flour (g)
+                    <input type="number" id="inputPoolishFlour" readonly />
+                </label>
+                <label for="inputPoolishWater">Water (g)
+                    <input type="number" id="inputPoolishWater" readonly />
+                </label>
+                <label for="inputYeastType">Yeast Type
+                    <select id="inputYeastType">
+                        <option value="instant_dry">Instant dry</option>
+                        <option value="fresh">Fresh</option>
+                    </select>
+                </label>
+                <label for="inputPoolishYeast">Yeast (g)
+                    <input type="number" id="inputPoolishYeast" readonly />
+                </label>
+                <label for="inputPoolishHoney">Honey (g)
+                    <input type="number" id="inputPoolishHoney" readonly />
+                </label>
+
+                <ul>
+                    <li><label><input type="checkbox" id="poolish-step1"> Dissolve yeast and honey in water, add flour, and mix until smooth.</label></li>
+                    <li><label><input type="checkbox" id="poolish-step2"> Cover and ferment at room temp 1h.</label></li>
+                    <li><label><input type="checkbox" id="poolish-step3"> Store in fridge overnight.</label></li>
+                </ul>
+                
+            </section>
+
+            <!-- Page 3: Final Mix -->
+            <!-- Purpose: Remaining ingredients and final mix steps before shaping -->
+            <section class="page" id="page-3" aria-labelledby="page-3-title">
+                <h3 id="page-3-title">Step 2 - Final Mix</h3>
+                <p class="timeModule" id="labelStep2DateTime"></p>
+                <label for="inputRemainingFlour">Flour (g)
+                    <input type="number" id="inputRemainingFlour" readonly />
+                </label>
+                <label for="inputRemainingWater">Water (g)
+                    <input type="number" id="inputRemainingWater" readonly />
+                </label>
+                <label for="inputRemainingSalt">Salt (g)
+                    <input type="number" id="inputRemainingSalt" readonly />
+                </label>
+                <label class="inline-check"><input type="checkbox" id="step2"> Mix poolish with remaining water then add flour and salt. Mix until everything is incorporated.</label>
+                <label class="inline-check"><input type="checkbox" id="step2"> Cover and rest for 15 minutes.</label>
+            </section>
+
+            <!-- Page 4: Final Steps -->
+            <!-- Purpose: Knead, rest, and ball timings before baking -->
+            <section class="page" id="page-4" aria-labelledby="page-4-title">
+                <h3 id="page-4-title">Final Steps</h3>
+                <ul>
+                    <li><label><input type="checkbox"> Knead until smooth. This can take 10 minutes or more.</label></li>
+                    <li><label><input type="checkbox"> Cover and rest for another 15 minutes.</label></li>
+                    <li><label><input type="checkbox"> Ball, cover and rest for 1-2 h depending on room temperature.</label></li>
+                </ul>
+            </section>
+        </div>
+
+        <!-- Wizard navigation -->
+        <div class="wizard-nav">
+            <button type="button" id="prevStepBtn">Back</button>
+            <div class="wizard-spacer"></div>
+            <div id="nav-error" class="nav-error" aria-live="polite"></div>
+            <button type="button" id="nextStepBtn">Next</button>
+        </div>
+    </main>
+
+    <!-- Totals Modal -->
+    <div id="totalsModal" class="modal" hidden>
+        <div class="modal-backdrop" data-close="true"></div>
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="totals-title">
+            <div class="modal-header">
+                <h3 id="totals-title">Batch totals</h3>
             </div>
-
-            <div class="top-bar">
-                <div class="top-bar-left">
-                    <a href="https://atoll6.github.io/" id="backBtn" style="text-decoration:none;"><button type="button">&#8592; Back</button></a>
-                </div>
-                <div class="top-bar-center">
-                    <button type="button" id="openTotalsBtn">Totals</button>
-                </div>
-                <div class="top-bar-right">
-                    <button id="resetFormBtn" type="button">New Pizza</button>
-                </div>
+            <div class="summary-grid">
+                <label for="inputTotalDoughWeight">Total Dough Weight (g)
+                    <input type="number" id="inputTotalDoughWeight" readonly />
+                </label>
+                <label for="inputFlour">Total Flour (g)
+                    <input type="number" id="inputFlour" readonly />
+                </label>
+                <label for="inputWater">Total Water (g)
+                    <input type="number" id="inputWater" readonly />
+                </label>
+                <label for="inputSaltAmount">Total Salt (g)
+                    <input type="number" id="inputSaltAmount" readonly />
+                </label>
             </div>
+            <div class="modal-actions">
+                <button type="button" id="closeTotalsBtn2">Close</button>
+            </div>
+        </div>
+    </div>
 
-            <script src="app.js"></script>
-        </body>
-        </html>
-    var openTotalsBtn = document.getElementById('openTotalsBtn');
-    var closeTotalsBtn = document.getElementById('closeTotalsBtn');
-    var closeTotalsBtn2 = document.getElementById('closeTotalsBtn2');
-    var lastFocusedBeforeModal = null;
-    function openModal(){
-        if (!totalsModal) return;
-        lastFocusedBeforeModal = document.activeElement;
-        totalsModal.hidden = false;
-        totalsModal.classList.add('open');
-        var focusEl = closeTotalsBtn || closeTotalsBtn2;
-        if (focusEl) focusEl.focus();
-    }
-    function closeModal(){
-        if (!totalsModal) return;
-        totalsModal.classList.remove('open');
-        totalsModal.hidden = true;
-        if (lastFocusedBeforeModal && document.body.contains(lastFocusedBeforeModal)) lastFocusedBeforeModal.focus();
-        lastFocusedBeforeModal = null;
-    }
-    if (openTotalsBtn) openTotalsBtn.addEventListener('click', openModal);
-    if (closeTotalsBtn) closeTotalsBtn.addEventListener('click', closeModal);
-    if (closeTotalsBtn2) closeTotalsBtn2.addEventListener('click', closeModal);
-    if (totalsModal) totalsModal.addEventListener('click', function(e){ if (e.target && e.target.getAttribute('data-close') === 'true') closeModal(); });
-    document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && totalsModal && !totalsModal.hidden) closeModal(); });
-});
-</script>
+    <!-- Poolish Warning Modal -->
+    <div id="poolishModal" class="modal" hidden>
+        <div class="modal-backdrop" data-close="true"></div>
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="poolish-title" aria-describedby="poolish-desc">
+            <div class="modal-header">
+                <h3 id="poolish-title">Poolish too large</h3>
+            </div>
+            <div class="summary-grid">
+                <p id="poolish-desc" class="col-span-full">
+                    The locked poolish is larger than the current totals: 
+                    <b><span id="warnPoolishFlour"></span> g flour</b> / 
+                    <b><span id="warnPoolishWater"></span> g water</b>.
+                    <br/>Unlock the poolish or adjust your plan.
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="backToPlanBtn">Back to Plan</button>
+                <button type="button" id="unlockPoolishBtn">Unlock Poolish</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <a href="https://atoll6.github.io/" id="backBtn" class="no-underline"><button type="button">&#8592; Back</button></a>
+        </div>
+        <div class="top-bar-center">
+            <button type="button" id="openTotalsBtn">Totals</button>
+        </div>
+        <div class="top-bar-right">
+            <button id="resetFormBtn" type="button">New Pizza</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>

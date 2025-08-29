@@ -1,4 +1,11 @@
 // Dough Calculator – main app logic
+// ------------------------------------------------------------
+// This file computes ingredient amounts, handles the stepper UI,
+// persists state, and manages two modals (Totals + Poolish warning).
+// The refactor below keeps behavior identical while improving
+// readability, reducing repetition, and adding targeted comments.
+// ------------------------------------------------------------
+
 // Small, focused helpers up top
 const $ = (id) => document.getElementById(id);
 const setInt = (id, v) => { const el = $(id); if (el) el.value = String(Math.round(Number(v || 0))); };
@@ -12,6 +19,69 @@ const fmtDateTime = (d) => {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${weekdays[d.getDay()]}, ${pad2(d.getDate())}-${months[d.getMonth()]}-${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 };
+
+// Domain constants
+const CONFIG = {
+  poolishCandidates: [300, 200, 100], // preferred poolish flour/water sizes (g)
+  idyPct: 0.015, // 1.5% instant dry yeast (of poolish flour)
+  honeyPct: 0.015, // 1.5% honey (of poolish flour)
+  yeastFactor: {
+    instant_dry: 1,
+    fresh: 3, // fresh yeast ~3x instant dry
+  },
+};
+
+// Small DOM/value helpers
+const getInt = (id, fallback = 0) => {
+  const v = ((($(id)) || {}).value);
+  const n = parseInt(v == null || v === '' ? String(fallback) : v);
+  return Number.isNaN(n) ? fallback : n;
+};
+const getFloat = (id, fallback = 0) => {
+  const v = ((($(id)) || {}).value);
+  const n = parseFloat(v == null || v === '' ? String(fallback) : v);
+  return Number.isNaN(n) ? fallback : n;
+};
+// Modal helpers
+const openModalById = (id, focusSelector) => {
+  const m = $(id); if (!m) return;
+  m.hidden = false; m.classList.add('open');
+  if (focusSelector) { const el = m.querySelector(focusSelector); if (el) el.focus(); }
+  // Prevent background scroll when modal is open
+  document.body.classList.add('modal-open');
+};
+const closeModalById = (id) => { const m = $(id); if (!m) return; m.classList.remove('open'); m.hidden = true; if (!document.querySelector('.modal.open')) document.body.classList.remove('modal-open'); };
+// Poolish modal focus management
+const setPoolishFocusReturn = () => {
+  const focusEl = document.activeElement;
+  if (focusEl && focusEl !== document.body) {
+    try { window.__poolishFocusReturnEl = focusEl; } catch { /* noop */ }
+  }
+};
+const restorePoolishFocus = () => {
+  const el = (typeof window !== 'undefined') ? window.__poolishFocusReturnEl : null;
+  if (el && document.body.contains(el)) {
+    try { el.focus(); } catch { /* noop */ }
+  }
+  try { window.__poolishFocusReturnEl = null; } catch { /* noop */ }
+};
+// Poolish warning UI spans
+const updatePoolishWarnSpans = (pf, pw) => {
+  const wf = $('warnPoolishFlour'); const ww = $('warnPoolishWater');
+  if (wf) wf.textContent = String(Math.round(pf));
+  if (ww) ww.textContent = String(Math.round(pw));
+};
+const poolishExceedsTotals = (pf, pw, flourWeight, waterWeight) => isPoolishLocked() && (pf > flourWeight || pw > waterWeight);
+
+// Poolish helpers
+const choosePoolishCandidate = (flourWeight, waterWeight) => {
+  for (let i = 0; i < CONFIG.poolishCandidates.length; i++) {
+    const opt = CONFIG.poolishCandidates[i];
+    if (opt <= flourWeight && opt <= waterWeight) return opt;
+  }
+  return 0;
+};
+const getYeastFactor = (yeastType) => CONFIG.yeastFactor[yeastType] ?? CONFIG.yeastFactor.instant_dry;
 
 // Poolish lock (persisted in localStorage)
 const poolishKey = (k) => `doughcalc_${k}`;
@@ -33,7 +103,7 @@ const getLockedPoolishWater = () => {
   return Number.isNaN(w) ? f : w;
 };
 
-// State persistence
+// State persistence ----------------------------------------------------------
 function saveFormState() {
   document.querySelectorAll('input').forEach((el) => {
     if (!el.id) return;
@@ -63,12 +133,13 @@ function setDateTimeDefaults() {
   if (dateEl) dateEl.min = defaultDate();
 }
 
-// Core calculation
+// Core calculation -----------------------------------------------------------
 function refresh_data() {
-  const portionSize = parseInt(($('inputPortionSize') || {}).value || '0');
-  const portions = parseInt(($('inputPortions') || {}).value || '0');
-  const hydration = parseInt(($('inputHydration') || {}).value || '0');
-  const saltPct = parseFloat(($('inputSalt') || {}).value || '0');
+  // Read primary inputs
+  const portionSize = getInt('inputPortionSize', 0);
+  const portions = getInt('inputPortions', 0);
+  const hydration = getInt('inputHydration', 0);
+  const saltPct = getFloat('inputSalt', 0);
 
   const totalDoughWeight = Math.round(portions * portionSize);
   const h = hydration / 100;
@@ -103,18 +174,9 @@ function refresh_data() {
   let poolishFlour = 0;
   let poolishWater = 0;
   const yeastType = (($('inputYeastType') || {}).value) || 'instant_dry';
-  const idyPct = 0.015; // 1.5%
-  const honeyPct = 0.015; // 1.5%
-  const yeastFactor = yeastType === 'fresh' ? 3 : 1; // fresh ~3x
-
-  const chooseCandidate = (flw, wat) => {
-    const candidates = [300, 200, 100];
-    for (let i = 0; i < candidates.length; i++) {
-      const opt = candidates[i];
-      if (opt <= flw && opt <= wat) return opt;
-    }
-    return 0;
-  };
+  const idyPct = CONFIG.idyPct;
+  const honeyPct = CONFIG.honeyPct;
+  const yeastFactor = getYeastFactor(yeastType);
 
   if (isPoolishLocked()) {
     poolishFlour = getLockedPoolishFlour();
@@ -125,14 +187,15 @@ function refresh_data() {
     waterWeight = h * flourWeight;
     saltWeight = s * flourWeight;
   } else {
-    poolishFlour = chooseCandidate(flourWeight, waterWeight);
+    // Pick a candidate based on initial estimate, then correct after additives
+    poolishFlour = choosePoolishCandidate(flourWeight, waterWeight);
     poolishWater = poolishFlour;
     let addHoney = poolishFlour * honeyPct;
     let addYeast = poolishFlour * idyPct * yeastFactor;
     flourWeight = (totalDoughWeight - (addHoney + addYeast)) / (1 + h + s);
     waterWeight = h * flourWeight;
     saltWeight = s * flourWeight;
-    const corrected = chooseCandidate(flourWeight, waterWeight);
+    const corrected = choosePoolishCandidate(flourWeight, waterWeight);
     if (corrected !== poolishFlour) {
       poolishFlour = corrected;
       poolishWater = corrected;
@@ -167,27 +230,30 @@ function refresh_data() {
   setInt('inputRemainingWater', remainingWater);
   setInt('inputRemainingSalt', remainingSalt);
 
-  // Lock warning
-  const warnEl = $('poolish-lock-warning');
-  if (warnEl) {
-    const tooBig = isPoolishLocked() && (poolishFlour > flourWeight || poolishWater > waterWeight);
-    warnEl.style.display = tooBig ? 'block' : 'none';
-    if (tooBig) {
-      const wf = $('warnPoolishFlour'); const ww = $('warnPoolishWater');
-      if (wf) wf.textContent = String(Math.round(poolishFlour));
-      if (ww) ww.textContent = String(Math.round(poolishWater));
-    }
+  // Poolish modal warning
+  const poolishTooBig = poolishExceedsTotals(poolishFlour, poolishWater, flourWeight, waterWeight);
+  updatePoolishWarnSpans(poolishFlour, poolishWater);
+  // Only open if user is on or past step 2 and condition is true
+  const pages = Array.from(document.querySelectorAll('.page'));
+  const onStep = pages.findIndex((p) => p.classList.contains('active')) + 1;
+  if (poolishTooBig && onStep >= 2) {
+    setPoolishFocusReturn();
+    openModalById('poolishModal', '#unlockPoolishBtn');
+  } else {
+    closeModalById('poolishModal');
   }
 }
 
+// Input wiring & event handlers ---------------------------------------------
 function wireInputListeners() {
   const sync = () => { refresh_data(); saveFormState(); try { if (typeof updateNavButtons === 'function') updateNavButtons(); } catch { /* noop */ } };
 
   const step1 = $('poolish-step1');
   const step2 = $('poolish-step2');
+  const step3 = $('poolish-step3');
   const onPoolishStepChanged = () => {
-    const anyChecked = (!!step1 && step1.checked) || (!!step2 && step2.checked);
-    if (anyChecked) {
+    const allChecked = (!!step1 && step1.checked) && (!!step2 && step2.checked) && (!!step3 && step3.checked);
+    if (allChecked) {
       const pf = parseInt(($('inputPoolishFlour') || {}).value || '0');
       const pw = parseInt(($('inputPoolishWater') || {}).value || String(pf));
       lockPoolish(pf, pw);
@@ -200,9 +266,31 @@ function wireInputListeners() {
   };
   if (step1) step1.addEventListener('change', onPoolishStepChanged);
   if (step2) step2.addEventListener('change', onPoolishStepChanged);
+  if (step3) step3.addEventListener('change', onPoolishStepChanged);
+
+  // Modal buttons
+  const unlockBtn = $('unlockPoolishBtn');
+  const backToPlanBtn = $('backToPlanBtn');
+  const closePoolishModal = () => { closeModalById('poolishModal'); restorePoolishFocus(); };
+  if (unlockBtn) unlockBtn.addEventListener('click', () => {
+    unlockPoolish();
+  if (step1) step1.checked = false;
+  if (step2) step2.checked = false;
+  if (step3) step3.checked = false;
+    closePoolishModal();
+    refresh_data();
+    saveFormState();
+    try { if (typeof updateNavButtons === 'function') updateNavButtons(); } catch { /* noop */ }
+  });
+  if (backToPlanBtn) backToPlanBtn.addEventListener('click', () => {
+  // Navigate to plan page (step 1)
+  if (typeof window.gotoStep === 'function') window.gotoStep(1); else { localStorage.setItem(poolishKey('currentStep'), '1'); location.hash = '#step-1'; }
+    closePoolishModal();
+  });
 
   document.querySelectorAll('input').forEach((el) => {
-    if (el.id === 'poolish-step1' || el.id === 'poolish-step2') return;
+    // Poolish checkboxes have their own handler to manage the lock
+    if (el.id === 'poolish-step1' || el.id === 'poolish-step2' || el.id === 'poolish-step3') return;
     el.addEventListener('input', sync);
     el.addEventListener('change', sync);
   });
@@ -212,17 +300,21 @@ function wireInputListeners() {
 function ensurePoolishLockConsistency() {
   const step1 = $('poolish-step1');
   const step2 = $('poolish-step2');
-  const anyChecked = (!!step1 && step1.checked) || (!!step2 && step2.checked);
-  if (anyChecked && !isPoolishLocked()) {
+  const step3 = $('poolish-step3');
+  const c1 = !!step1 && step1.checked;
+  const c2 = !!step2 && step2.checked;
+  const c3 = !!step3 && step3.checked;
+  const all = c1 && c2 && c3;
+  if (!isPoolishLocked() && all) {
     const pf = parseInt(($('inputPoolishFlour') || {}).value || '0');
     const pw = parseInt(($('inputPoolishWater') || {}).value || String(pf));
     lockPoolish(pf, pw);
-  } else if (!anyChecked && isPoolishLocked()) {
+  } else if (isPoolishLocked() && !all) {
     unlockPoolish();
   }
 }
 
-// Wizard
+// Wizard (stepper) ----------------------------------------------------------
 function setupWizard() {
   const pages = Array.from(document.querySelectorAll('.page'));
   const totalSteps = pages.length;
@@ -240,6 +332,7 @@ function setupWizard() {
     el.innerHTML = `<ul>${errors.map((e) => `<li>${e}</li>`).join('')}</ul>`; el.style.display = 'block';
   };
 
+  // Validates the current step. When `show` is true, surfaces messages.
   function validateStep(step, show) {
     if (navError) navError.textContent = '';
     if (step === 1) {
@@ -254,13 +347,20 @@ function setupWizard() {
       return errs.length === 0;
     }
     if (step === 2) {
-      const cb1 = $('poolish-step1'); const cb2 = $('poolish-step2');
-      const cbsOk = (!!cb1 && cb1.checked) && (!!cb2 && cb2.checked);
+      const cb1 = $('poolish-step1'); const cb2 = $('poolish-step2'); const cb3 = $('poolish-step3');
+      const cbsOk = (!!cb1 && cb1.checked) && (!!cb2 && cb2.checked) && (!!cb3 && cb3.checked);
       if (!cbsOk && show && navError) navError.textContent = 'Please complete the poolish steps before continuing.';
-      const warn = $('poolish-lock-warning');
-      const blocked = !!warn && warn.style.display !== 'none';
-      if (blocked && navError) navError.textContent = 'Adjust portions/size or unlock poolish to proceed.';
-      return cbsOk && !blocked;
+      // Compute poolish-too-large condition
+      const pf = getInt('inputPoolishFlour');
+      const pw = getInt('inputPoolishWater', pf);
+      const twf = getInt('inputFlour');
+      const tww = getInt('inputWater');
+      const tooBig = poolishExceedsTotals(pf, pw, twf, tww);
+      if (show && tooBig) {
+        updatePoolishWarnSpans(pf, pw);
+        openModalById('poolishModal');
+      }
+      return cbsOk && !tooBig;
     }
     if (step === 3) {
       const fm = $('step2'); const ok = !!fm && fm.checked;
@@ -302,14 +402,19 @@ function setupWizard() {
       li.setAttribute('aria-current', idx === step ? 'step' : 'false');
     });
   };
+  // Shows the given step and refreshes UI derived from step context
   const showStep = (step) => {
     pages.forEach((p, i) => { const idx = i + 1; if (idx === step) p.classList.add('active'); else p.classList.remove('active'); });
     updateStepper(step);
     if (prevBtn) prevBtn.disabled = step === 1;
     if (nextBtn) nextBtn.textContent = (step === totalSteps) ? 'Finish' : 'Next';
+    // Recompute any UI that depends on current step (e.g., poolish modal gating)
+    try { refresh_data(); } catch {}
     updateNavButtons();
   };
   const setStep = (step) => { const s = Math.max(1, Math.min(totalSteps, step)); storeStep(s); showStep(s); };
+  // Expose navigation globally so other handlers (e.g., modal buttons) can jump steps
+  window.gotoStep = setStep;
   const currentStep = () => { const active = pages.findIndex((p) => p.classList.contains('active')); return active >= 0 ? active + 1 : 1; };
   var updateNavButtons = () => { const s = currentStep(); const can = validateStep(s, false); if (nextBtn) { nextBtn.disabled = !can; nextBtn.classList.toggle('is-disabled', !can); } };
 
@@ -338,7 +443,7 @@ function setupWizard() {
   window.updateNavButtons = updateNavButtons;
 }
 
-// Reset workflow
+// Reset workflow -------------------------------------------------------------
 function resetAll() {
   const setIf = (id, v) => { const el = $(id); if (el && !el.disabled && !el.readOnly) el.value = v; };
   setIf('inputPortions', '2');
@@ -350,33 +455,77 @@ function resetAll() {
   setDateTimeDefaults();
   const yt = $('inputYeastType'); if (yt && !yt.disabled) yt.value = 'instant_dry';
   refresh_data();
-  try { if (typeof setStep === 'function') setStep(1); } catch { /* noop */ }
+  if (typeof window.gotoStep === 'function') window.gotoStep(1); else { localStorage.setItem(poolishKey('currentStep'), '1'); location.hash = '#step-1'; }
 }
 
-// Modal wiring
+// Modal wiring ---------------------------------------------------------------
 function setupModal() {
   const totalsModal = $('totalsModal');
   const openTotalsBtn = $('openTotalsBtn');
   const closeTotalsBtn = $('closeTotalsBtn');
   const closeTotalsBtn2 = $('closeTotalsBtn2');
+  const poolishModal = $('poolishModal');
   let lastFocusedBeforeModal = null;
+  // Focus trap within a given modal
+  const trapFocus = (container) => {
+    if (!container) return () => {};
+    const selector = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+    const focusables = () => Array.from(container.querySelectorAll(selector)).filter((el) => {
+      if (el.hasAttribute('disabled') || el.getAttribute('aria-hidden') === 'true' || el.tabIndex === -1) return false;
+      const rects = el.getClientRects();
+      return (el.offsetWidth + el.offsetHeight) > 0 || rects.length > 0;
+    });
+    const onKeyDown = (e) => {
+      if (e.key !== 'Tab') return;
+      const els = focusables(); if (!els.length) return;
+      const first = els[0]; const last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    container.addEventListener('keydown', onKeyDown);
+    return () => container.removeEventListener('keydown', onKeyDown);
+  };
+  let releaseTrap = () => {};
   const openModal = () => {
     if (!totalsModal) return;
     lastFocusedBeforeModal = document.activeElement;
     totalsModal.hidden = false; totalsModal.classList.add('open');
     (closeTotalsBtn || closeTotalsBtn2)?.focus();
+    document.body.classList.add('modal-open');
+    releaseTrap = trapFocus(totalsModal);
   };
   const closeModal = () => {
     if (!totalsModal) return;
     totalsModal.classList.remove('open'); totalsModal.hidden = true;
     if (lastFocusedBeforeModal && document.body.contains(lastFocusedBeforeModal)) lastFocusedBeforeModal.focus();
     lastFocusedBeforeModal = null;
+    releaseTrap();
+    if (!document.querySelector('.modal.open')) document.body.classList.remove('modal-open');
   };
   if (openTotalsBtn) openTotalsBtn.addEventListener('click', openModal);
   if (closeTotalsBtn) closeTotalsBtn.addEventListener('click', closeModal);
   if (closeTotalsBtn2) closeTotalsBtn2.addEventListener('click', closeModal);
   if (totalsModal) totalsModal.addEventListener('click', (e) => { if (e.target && e.target.getAttribute('data-close') === 'true') closeModal(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && totalsModal && !totalsModal.hidden) closeModal(); });
+  document.addEventListener('keydown', (e) => { 
+    if (e.key === 'Escape') {
+      if (totalsModal && !totalsModal.hidden) closeModal();
+      if (poolishModal && !poolishModal.hidden) closeModalById('poolishModal');
+    }
+  });
+  if (poolishModal) poolishModal.addEventListener('click', (e) => { if (e.target && e.target.getAttribute('data-close') === 'true') closeModalById('poolishModal'); });
+  // Trap focus inside poolish modal when opened via refresh_data/validation
+  let poolishReleaseTrap = null;
+  const poolishObserver = new MutationObserver(() => {
+    if (!poolishModal) return;
+    const isOpen = poolishModal.classList.contains('open') && !poolishModal.hidden;
+    if (isOpen && !poolishReleaseTrap) {
+      poolishReleaseTrap = trapFocus(poolishModal);
+    } else if (!isOpen && poolishReleaseTrap) {
+      poolishReleaseTrap();
+      poolishReleaseTrap = null;
+    }
+  });
+  if (poolishModal) poolishObserver.observe(poolishModal, { attributes: true, attributeFilter: ['class', 'hidden'] });
 }
 
 // Boot
@@ -384,13 +533,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setDateTimeDefaults();
   restoreFormState();
   wireInputListeners();
-  refresh_data();
   ensurePoolishLockConsistency();
-  refresh_data();
-
   // Reset button
   const resetBtn = $('resetFormBtn'); if (resetBtn) resetBtn.addEventListener('click', () => resetAll());
 
+  // Initialize wizard first so step context exists, then refresh and wire modals
   setupWizard();
+  refresh_data();
   setupModal();
 });

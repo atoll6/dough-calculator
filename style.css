@@ -1,5 +1,11 @@
-/* Global reset */
+/* ------------------------------------------------------------
+  Global reset & layout
+  ------------------------------------------------------------ */
 *, *::before, *::after { box-sizing: border-box; }
+
+/* Small utilities */
+.no-underline { text-decoration: none; }
+.col-span-full { grid-column: 1 / -1; }
 
 /* Fixed top bar for navigation buttons */
 .top-bar {
@@ -37,12 +43,15 @@
   body { padding-top: 4.5rem; }
 }
 
+/* Base typography and page background */
 body { margin: 0; padding: 0; padding-top: 4.5rem; font-family: 'San Francisco', 'Inter', Arial, sans-serif; color: #222; min-height: 100vh; display: flex; flex-direction: column; align-items: center; background: linear-gradient(135deg, #f5f6fa 0%, #e9ecef 100%); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; color-scheme: light dark; }
 
 
 main { max-width: 600px; width: 100%; background: rgba(255,255,255,0.85); margin: 2rem 0; padding: 2rem; border-radius: 1.25rem; box-shadow: 0 8px 32px 0 rgba(60,60,60,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.04); position: relative; z-index: 1; border: 1px solid #e0e0e0; }
 
-/* Wizard */
+/* ------------------------------------------------------------
+  Wizard (stepper + pages)
+  ------------------------------------------------------------ */
 .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
 .wizard { position: relative; }
 .page { display: none; opacity: 0; transform: translateX(10px); transition: opacity .25s ease, transform .25s ease; }
@@ -69,15 +78,26 @@ main { max-width: 600px; width: 100%; background: rgba(255,255,255,0.85); margin
 .stepper li.locked { opacity: .5; cursor: not-allowed; }
 .stepper li { min-height: 3.25rem; }
 
-/* Modal */
+/* ------------------------------------------------------------
+  Modal
+  ------------------------------------------------------------ */
 .modal { position: fixed; inset: 0; z-index: 1100; display: block; }
 .modal[hidden] { display: none !important; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.35); }
-.modal-dialog { position: relative; margin: 6vh auto; max-width: 560px; width: calc(100% - 2rem); background: #fff; border-radius: 0.8rem; box-shadow: 0 20px 60px rgba(0,0,0,0.25); border: 1px solid #e5e7eb; padding: 1rem 1rem 1rem; }
+.modal-dialog { position: relative; margin: 6vh auto; max-width: 560px; width: min(560px, calc(100% - 2rem)); background: #fff; border-radius: 0.8rem; box-shadow: 0 20px 60px rgba(0,0,0,0.25); border: 1px solid #e5e7eb; padding: 1rem 1rem 1rem; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .75rem; }
 .modal-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1rem; }
 .modal.open .modal-dialog { animation: modalIn .18s ease-out; }
 @keyframes modalIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Reduce motion for those who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .page { transition: none; }
+  .modal.open .modal-dialog { animation: none; }
+}
+
+/* When a modal is open, optionally prevent background scroll */
+body.modal-open { overflow: hidden; }
 
 button.is-disabled, .is-disabled { opacity: .6; cursor: not-allowed; }
 
@@ -121,6 +141,12 @@ button:hover, input[type="button"]:hover, input[type="submit"]:hover {
 
 ul { background: rgba(245,246,250,0.7); border-radius: 0.7em; padding: 1em 1.5em; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03); margin-bottom: 1em; }
 li { margin-bottom: 0.7em; font-size: 1.05rem; }
+
+/* Checklist (checkbox steps) should not have bullets and should align checkbox inline with text */
+#page-2 ul, #page-4 ul { list-style: none; padding-left: 0; }
+#page-2 ul label, #page-4 ul label { flex-direction: row; align-items: center; gap: 0.5em; }
+/* Final mix single step checkbox inline */
+#page-3 .inline-check { display: flex; flex-direction: row; align-items: center; gap: 0.5em; margin: .5rem 0 1rem; }
 
 .timeModule {
   display: flex;
