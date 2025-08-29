@@ -4,451 +4,202 @@
     <meta name="author" content="Arda Tolan">
     <meta name="description" content="A Pizza-dough calculator">
     <meta name="viewport" content="width=device-width">
-    <meta name="color-scheme" content="light dark">
-    <link rel="shortcut icon" type="image/png" href="favicon.png"/>
-    <link rel="stylesheet" href="style.css">
-    <title>Arda's Pizza-dough Calculator</title>
-</head>
-<body>
-<main>
-    <h2>Original 24-hour Pizza Dough</h2>
-    <!-- DateTime Picker -->
-    <section class="timeModule">
-        <label>Planned Date to Eat
-            <input type="date" id="inputDate">
-        </label>
-        <label>Time
-            <input type="time" id="inputTime">
-        </label>
-    </section>
-    <section>
-        <label>Portions
-            <input type="number" inputmode="numeric" id="inputPortions" value="2"> balls
-        </label>
-        <label>Portion Size
-            <input type="number" inputmode="numeric" id="inputPortionSize" value="280"> g
-        </label>
-        <label>Hydration
-            <input type="number" inputmode="numeric" id="inputHydration" value="70"> %
-        </label>
-        <label>Salt
-            <input type="number" inputmode="numeric" id="inputSalt" value="3"> %
-        </label>
-    </section>
-    <section>
-    <div id="portion-warning" style="display:none;">
-            The poolish amount is chosen automatically (100:100, 200:200, or 300:300) to use as much as possible for your batch. For more than 12 portions, consider splitting the recipe into 2 or more batches.
-        </div>
-        <h2>Final Result:</h2>
-        <label>Total Dough Weight (g)
-            <input type="text" id="inputTotalDoughWeight" disabled readonly>
-        </label>
-        <label>Total Flour Weight (g)
-            <input type="text" id="inputFlour" disabled readonly>
-        </label>
-        <label>Total Water (g)
-            <input type="text" id="inputWater" disabled readonly>
-        </label>
-        <label>Total Salt (g)
-            <input type="text" id="inputSaltAmount" disabled readonly>
-        </label>
-    </section>
-    <section>
-        <h2>Step 1 - Make the poolish:</h2>
-        <div id="poolish-lock-warning" style="display:none;">
-            Locked poolish (<b>Flour: <span id="warnPoolishFlour">0</span> g</b>, <b>Water: <span id="warnPoolishWater">0</span> g</b>) exceeds current totals.
-            Increase portions/size or <button id="unlockPoolishBtn" type="button">Unlock poolish</button> to recalculate automatically.
-        </div>
-        <p class="timeModule" id="labelDateTimeToStart"></p>
-        <label>Flour (g)
-            <input type="text" id="inputPoolishFlour" disabled readonly>
-        </label>
-        <label>Water (g)
-            <input type="text" id="inputPoolishWater" disabled readonly>
-        </label>
-        <label>Yeast Type
-            <select id="inputYeastType">
-                <option value="instant_dry" selected>Instant Dry</option>
-                <option value="fresh">Fresh (Cake)</option>
-            </select>
-        </label>
-        <label>Yeast (g)
-            <input type="text" id="inputPoolishYeast" disabled readonly>
-        </label>
-        <label>Honey (g)
-            <input type="text" id="inputPoolishHoney" disabled readonly>
-        </label>
-        <ul>
-            <li><input type="checkbox" id="poolish-step1"> <label for="poolish-step1">Mix and let sit for 1 hour at room temperature.</label></li>
-            <li><input type="checkbox" id="poolish-step2"> <label for="poolish-step2">Refrigerate for 16-24 hrs (until the time below, depending on when you started)</label></li>
-        </ul>
-    </section>
-    <section>
-        <h2>Step 2 - Final Mix:</h2>
-        <p class="timeModule" id="labelStep2DateTime"></p>
-        <ul>
-            <li><input type="checkbox" id="step2"> <label for="step2">Add the following to your fermented poolish, and continue to the final steps</label></li>
-        </ul>
-        <label>Flour (g)
-            <input type="text" id="inputRemainingFlour" disabled readonly>
-        </label>
-        <label>Water (g)
-            <input type="text" id="inputRemainingWater" disabled readonly>
-        </label>
-        <label>Salt (g)
-            <input type="text" id="inputRemainingSalt" disabled readonly>
-        </label>
-    </section>
-    <section>
-        <h2>Final Steps:</h2>
-        <ul>
-            <li><input type="checkbox" id="final-step1"> <label for="final-step1">Mix all together by hand or mixer</label></li>
-            <li><input type="checkbox" id="final-step2"> <label for="final-step2">Cover and let rest for 20-30 minutes (autolyse)</label></li>
-            <li><input type="checkbox" id="final-step3"> <label for="final-step3">Knead dough and form into ball. Don't worry if dough is still sticky at this stage.</label></li>
-            <li><input type="checkbox" id="final-step4"> <label for="final-step4">Cover and let rest another 15-20 minutes. Dough will be easier to work with after this period. Dough should be smooth on the surface, bounce back when poked, and pass the windowpane test.</label></li>
-            <li><input type="checkbox" id="final-step5"> <label for="final-step5">Split by portion weight and form into balls</label></li>
-            <li><input type="checkbox" id="final-step6"> <label for="final-step6">Place on tray and cover with cling-film or cover container with lid. Let rest 1 - 2 hours until dough doubles in size. This could vary depending on your room temperature.</label></li>
-            <li><input type="checkbox" id="final-step7"> <label for="final-step7">Form pizza bases and bake!</label></li>
-        </ul>
-    </section>
-</main>
-<div class="top-bar">
-    <div class="top-bar-left">
-        <a href="https://atoll6.github.io/" id="backBtn" style="text-decoration:none;"><button type="button">&#8592; Back</button></a>
-    </div>
-    <div class="top-bar-right">
-        <button id="resetFormBtn" type="button">New Pizza</button>
-    </div>
-</div>
-<script>
-// Helpers for defaults and formatting
-function pad2(n){ return n < 10 ? '0' + n : '' + n; }
-function defaultDate() {
-    var d = new Date();
-    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
-}
-function defaultTimeStr() {
-    var d = new Date();
-    var h = (d.getHours() + 1) % 24; // current hour + 1
-    return pad2(h) + ':00';
-}
-function parseLocalDateTime(dateStr, timeStr){
-    var d = dateStr && timeStr ? new Date(dateStr + 'T' + timeStr) : new Date();
-    return d;
-}
-function addHours(date, hours){ return new Date(date.getTime() + hours * 3600000); }
-function fmtDateTime(d){
-    var weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return weekdays[d.getDay()] + ', ' + pad2(d.getDate()) + '-' + months[d.getMonth()] + '-' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
-}
-function setDateTimeDefaults() {
-    var dateEl = document.getElementById('inputDate');
-    var timeEl = document.getElementById('inputTime');
-    if (dateEl && !dateEl.disabled && !dateEl.readOnly) dateEl.value = defaultDate();
-    if (timeEl && !timeEl.disabled && !timeEl.readOnly) timeEl.value = defaultTimeStr();
-}
-function setIntValue(id, value) {
-    var el = document.getElementById(id);
-    if (el) el.value = String(Math.round(Number(value)));
-}
+    <!doctype html>
+    <html lang="en">
+    <head>
+            <meta charset="utf-8">
+            <meta name="author" content="Arda Tolan">
+            <meta name="description" content="A Pizza-dough calculator">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="color-scheme" content="light dark">
+            <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+            <link rel="stylesheet" href="style.css">
+            <title>Arda's Pizza-dough Calculator</title>
+        </head>
+        <body>
+            <main>
+                <h2>Original 24-hour Pizza Dough</h2>
 
-// Poolish lock helpers (persisted in localStorage)
-function isPoolishLocked() {
-    return localStorage.getItem('doughcalc_poolishLocked') === 'true';
-}
-function lockPoolish(flour, water) {
-    localStorage.setItem('doughcalc_poolishLocked', 'true');
-    localStorage.setItem('doughcalc_lockedPoolishFlour', String(parseInt(flour || 0)));
-    localStorage.setItem('doughcalc_lockedPoolishWater', String(parseInt(water || flour || 0)));
-}
-function unlockPoolish() {
-    localStorage.removeItem('doughcalc_poolishLocked');
-    localStorage.removeItem('doughcalc_lockedPoolishFlour');
-    localStorage.removeItem('doughcalc_lockedPoolishWater');
-}
-function getLockedPoolishFlour() {
-    return parseInt(localStorage.getItem('doughcalc_lockedPoolishFlour') || '0');
-}
-function getLockedPoolishWater() {
-    var f = getLockedPoolishFlour();
-    var w = parseInt(localStorage.getItem('doughcalc_lockedPoolishWater') || String(f));
-    return isNaN(w) ? f : w;
-}
+                <!-- Stepper -->
+                <ol id="stepper" class="stepper" aria-label="Steps">
+                    <li data-step="1">Plan</li>
+                    <li data-step="2">Poolish</li>
+                    <li data-step="3">Final Mix</li>
+                    <li data-step="4">Final Steps</li>
+                </ol>
 
-function refresh_data() {
-    var portionSize = parseInt(document.getElementById('inputPortionSize').value);
-    var portions = parseInt(document.getElementById('inputPortions').value);
-    var hydration = parseInt(document.getElementById('inputHydration').value);
-    var salt = parseFloat(document.getElementById('inputSalt').value);
+                <div id="wizard" class="wizard">
+                    <!-- Page 1: Planning & Inputs -->
+                    <section class="page" id="page-1" aria-labelledby="page-1-title">
+                        <h3 id="page-1-title" class="visually-hidden">Plan</h3>
+                        <div class="timeModule">
+                            <label for="inputDate">Planned Date to Eat
+                                <input type="date" id="inputDate" />
+                            </label>
+                            <label for="inputTime">Time
+                                <input type="time" id="inputTime" />
+                            </label>
+                        </div>
+                        <div>
+                            <label for="inputPortions">Portions
+                                <input type="number" id="inputPortions" min="1" step="1" value="2" />
+                            </label>
+                            <label for="inputPortionSize">Portion Size (g)
+                                <input type="number" id="inputPortionSize" min="1" step="1" value="280" />
+                            </label>
+                            <label for="inputHydration">Hydration (%)
+                                <input type="number" id="inputHydration" min="50" max="85" step="1" value="70" />
+                            </label>
+                            <label for="inputSalt">Salt (% of flour)
+                                <input type="number" id="inputSalt" min="1" max="4" step="0.1" value="3" />
+                            </label>
+                        </div>
+                        <div id="portion-warning" style="display:none;">
+                            Large batch warning: consider splitting into multiple batches for easier handling.
+                        </div>
+                        <div id="page-1-errors" class="nav-error" style="display:none;"></div>
+                    </section>
 
-    var totalDoughWeight = Math.round(portions * portionSize);
-    var h = (hydration / 100);
-    var s = (salt / 100); // salt as % of flour
+                    <!-- Page 2: Poolish -->
+                    <section class="page" id="page-2" aria-labelledby="page-2-title">
+                        <h3 id="page-2-title">Step 1 - Make the poolish</h3>
+                        <div id="poolish-lock-warning" style="display:none;">
+                            Locked poolish is too large for current totals (<span id="warnPoolishFlour"></span> g flour / <span id="warnPoolishWater"></span> g water). Adjust inputs or unlock.
+                        </div>
+                        <p class="timeModule" id="labelDateTimeToStart"></p>
 
-    // Initial estimate without additives (honey + yeast) to seed candidate selection
-    var flourWeight = totalDoughWeight / (1 + h + s);
-    var waterWeight = h * flourWeight;
-    var saltWeight = s * flourWeight;
+                        <label for="inputPoolishFlour">Flour (g)
+                            <input type="number" id="inputPoolishFlour" readonly />
+                        </label>
+                        <label for="inputPoolishWater">Water (g)
+                            <input type="number" id="inputPoolishWater" readonly />
+                        </label>
+                        <label for="inputYeastType">Yeast Type
+                            <select id="inputYeastType">
+                                <option value="instant_dry">Instant dry</option>
+                                <option value="fresh">Fresh</option>
+                            </select>
+                        </label>
+                        <label for="inputPoolishYeast">Yeast (g)
+                            <input type="number" id="inputPoolishYeast" readonly />
+                        </label>
+                        <label for="inputPoolishHoney">Honey (g)
+                            <input type="number" id="inputPoolishHoney" readonly />
+                        </label>
 
-    var dateStr = document.getElementById('inputDate').value;
-    var timeStr = document.getElementById('inputTime').value;
-    var eatDateTime = parseLocalDateTime(dateStr, timeStr);
-    var step2DateTime = addHours(eatDateTime, -2);
-    var step2StartTime = fmtDateTime(step2DateTime);
-    var step2EarliestDateTime = addHours(eatDateTime, -3);
-    var step2EarliestStartTime = fmtDateTime(step2EarliestDateTime);
-    var step2Label = document.getElementById('labelStep2DateTime');
-    if (step2Label) step2Label.innerHTML = 'Recommended time to start: between <b>' + step2EarliestStartTime + '</b> and <b>' + step2StartTime + '</b>';
+                        <ul>
+                            <li><label><input type="checkbox" id="poolish-step1"> Mix flour and water, then add yeast and honey.</label></li>
+                            <li><label><input type="checkbox" id="poolish-step2"> Cover and ferment at room temp until doubled.</label></li>
+                        </ul>
+                        <button type="button" id="unlockPoolishBtn">Unlock Poolish</button>
+                    </section>
 
-    var latestStartDateTime = fmtDateTime(addHours(eatDateTime, -(17+3)));
-    var earliestStartDateTime = fmtDateTime(addHours(eatDateTime, -(25+3)));
-    var startLabel = document.getElementById('labelDateTimeToStart');
-    if (startLabel) startLabel.innerHTML = 'Recommended time to start: Between <b>' + earliestStartDateTime + '</b> and <b>' + latestStartDateTime + '</b>';
+                    <!-- Page 3: Final Mix -->
+                    <section class="page" id="page-3" aria-labelledby="page-3-title">
+                        <h3 id="page-3-title">Step 2 - Final Mix</h3>
+                        <p class="timeModule" id="labelStep2DateTime"></p>
+                        <ul>
+                            <li>Combine poolish with remaining flour and water, rest, then knead.</li>
+                        </ul>
+                        <label for="inputRemainingFlour">Flour (g)
+                            <input type="number" id="inputRemainingFlour" readonly />
+                        </label>
+                        <label for="inputRemainingWater">Water (g)
+                            <input type="number" id="inputRemainingWater" readonly />
+                        </label>
+                        <label for="inputRemainingSalt">Salt (g)
+                            <input type="number" id="inputRemainingSalt" readonly />
+                        </label>
+                        <label><input type="checkbox" id="step2"> I completed the final mix.</label>
+                    </section>
 
-    var warnEl = document.getElementById('portion-warning');
-    if (warnEl) warnEl.style.display = portions > 12 ? 'block' : 'none';
+                    <!-- Page 4: Final Steps -->
+                    <section class="page" id="page-4" aria-labelledby="page-4-title">
+                        <h3 id="page-4-title">Final Steps</h3>
+                        <ul>
+                            <li><label><input type="checkbox"> Bulk ferment until ~50% rise.</label></li>
+                            <li><label><input type="checkbox"> Ball and cold-proof.</label></li>
+                            <li><label><input type="checkbox"> Bring to room temp, then bake.</label></li>
+                        </ul>
+                    </section>
+                </div>
 
-    // Decide poolish size (iterate once to incorporate additive mass while unlocked)
-    var poolishFlourWeight = 0;
-    var poolishWaterWeight = 0;
-    var yeastTypeEl = document.getElementById('inputYeastType');
-    var yeastType = yeastTypeEl ? yeastTypeEl.value : 'instant_dry';
-    var idyPct = 0.015;   // 1.5% instant dry
-    var honeyPct = 0.015; // 1.5% honey
-    var yeastFactor = yeastType === 'fresh' ? 3 : 1; // fresh yeast ~3x instant dry
+                <!-- Wizard navigation -->
+                <div class="wizard-nav">
+                    <button type="button" id="prevStepBtn">Back</button>
+                    <div class="wizard-spacer"></div>
+                    <div id="nav-error" class="nav-error" aria-live="polite"></div>
+                    <button type="button" id="nextStepBtn">Next</button>
+                </div>
+            </main>
 
-    function chooseCandidate(flw, wat) {
-        var candidates = [300, 200, 100];
-        for (var i = 0; i < candidates.length; i++) {
-            var opt = candidates[i];
-            if (opt <= flw && opt <= wat) return opt;
-        }
-        return 0;
+            <!-- Totals Modal -->
+            <div id="totalsModal" class="modal" hidden>
+                <div class="modal-backdrop" data-close="true"></div>
+                <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="totals-title">
+                    <div class="modal-header">
+                        <h3 id="totals-title">Batch totals</h3>
+                        <button type="button" id="closeTotalsBtn" aria-label="Close">✕</button>
+                    </div>
+                    <div class="summary-grid">
+                        <label for="inputTotalDoughWeight">Total Dough Weight (g)
+                            <input type="number" id="inputTotalDoughWeight" readonly />
+                        </label>
+                        <label for="inputFlour">Total Flour (g)
+                            <input type="number" id="inputFlour" readonly />
+                        </label>
+                        <label for="inputWater">Total Water (g)
+                            <input type="number" id="inputWater" readonly />
+                        </label>
+                        <label for="inputSaltAmount">Total Salt (g)
+                            <input type="number" id="inputSaltAmount" readonly />
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" id="closeTotalsBtn2">Close</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <a href="https://atoll6.github.io/" id="backBtn" style="text-decoration:none;"><button type="button">&#8592; Back</button></a>
+                </div>
+                <div class="top-bar-center">
+                    <button type="button" id="openTotalsBtn">Totals</button>
+                </div>
+                <div class="top-bar-right">
+                    <button id="resetFormBtn" type="button">New Pizza</button>
+                </div>
+            </div>
+
+            <script src="app.js"></script>
+        </body>
+        </html>
+    var openTotalsBtn = document.getElementById('openTotalsBtn');
+    var closeTotalsBtn = document.getElementById('closeTotalsBtn');
+    var closeTotalsBtn2 = document.getElementById('closeTotalsBtn2');
+    var lastFocusedBeforeModal = null;
+    function openModal(){
+        if (!totalsModal) return;
+        lastFocusedBeforeModal = document.activeElement;
+        totalsModal.hidden = false;
+        totalsModal.classList.add('open');
+        var focusEl = closeTotalsBtn || closeTotalsBtn2;
+        if (focusEl) focusEl.focus();
     }
-
-    if (isPoolishLocked()) {
-        poolishFlourWeight = getLockedPoolishFlour();
-        poolishWaterWeight = getLockedPoolishWater();
-    // Compute additives from locked poolish and correct flour/water/salt so total matches target
-    var addHoneyL = poolishFlourWeight * honeyPct;
-    var addYeastL = poolishFlourWeight * idyPct * yeastFactor;
-    flourWeight = (totalDoughWeight - (addHoneyL + addYeastL)) / (1 + h + s);
-    waterWeight = h * flourWeight;
-    saltWeight = s * flourWeight;
-    } else {
-        // Pass 1: pick using initial estimate
-        poolishFlourWeight = chooseCandidate(flourWeight, waterWeight);
-        poolishWaterWeight = poolishFlourWeight;
-
-        // Compute additives from chosen poolish
-        var addHoney = poolishFlourWeight * honeyPct;
-        var addYeast = poolishFlourWeight * idyPct * yeastFactor;
-
-        // Correct flour/water/salt so total matches target once additives are included
-        flourWeight = (totalDoughWeight - (addHoney + addYeast)) / (1 + h + s);
-        waterWeight = h * flourWeight;
-        saltWeight = s * flourWeight;
-
-        // Pass 2: ensure candidate still fits after correction
-        var correctedCandidate = chooseCandidate(flourWeight, waterWeight);
-        if (correctedCandidate !== poolishFlourWeight) {
-            poolishFlourWeight = correctedCandidate;
-            poolishWaterWeight = poolishFlourWeight;
-            // Recompute corrections with new additives (single extra pass is sufficient given coarse steps)
-            addHoney = poolishFlourWeight * honeyPct;
-            addYeast = poolishFlourWeight * idyPct * yeastFactor;
-            flourWeight = (totalDoughWeight - (addHoney + addYeast)) / (1 + h + s);
-            waterWeight = h * flourWeight;
-            saltWeight = s * flourWeight;
-        }
+    function closeModal(){
+        if (!totalsModal) return;
+        totalsModal.classList.remove('open');
+        totalsModal.hidden = true;
+        if (lastFocusedBeforeModal && document.body.contains(lastFocusedBeforeModal)) lastFocusedBeforeModal.focus();
+        lastFocusedBeforeModal = null;
     }
-
-    // Poolish yeast & honey: 1.5% of poolish flour (using chosen/locked poolish)
-    var poolishHoneyWeight = poolishFlourWeight * honeyPct;
-    var poolishYeastWeight = poolishFlourWeight * idyPct * yeastFactor;
-
-    // Remaining ingredients
-    var remainingFlour = Math.max(0, Math.round(flourWeight - poolishFlourWeight));
-    var remainingWater = Math.max(0, Math.round(waterWeight - poolishWaterWeight));
-    var remainingSalt = Math.round(saltWeight);
-
-    // Set poolish values in UI (as whole grams)
-    setIntValue('inputPoolishFlour', poolishFlourWeight);
-    setIntValue('inputPoolishWater', poolishWaterWeight);
-    setIntValue('inputPoolishYeast', poolishYeastWeight);
-    setIntValue('inputPoolishHoney', poolishHoneyWeight);
-
-    // Set remaining values in UI (as whole grams)
-    setIntValue('inputTotalDoughWeight', totalDoughWeight);
-    setIntValue('inputFlour', flourWeight);
-    setIntValue('inputWater', waterWeight);
-    setIntValue('inputSaltAmount', saltWeight);
-    setIntValue('inputRemainingFlour', remainingFlour);
-    setIntValue('inputRemainingWater', remainingWater);
-    setIntValue('inputRemainingSalt', remainingSalt);
-
-    // Show/hide warning if locked poolish exceeds current totals
-    var warnEl = document.getElementById('poolish-lock-warning');
-    if (warnEl) {
-        var tooBig = isPoolishLocked() && (poolishFlourWeight > flourWeight || poolishWaterWeight > waterWeight);
-        warnEl.style.display = tooBig ? 'block' : 'none';
-        if (tooBig) {
-            var wf = document.getElementById('warnPoolishFlour');
-            var ww = document.getElementById('warnPoolishWater');
-            if (wf) wf.textContent = String(Math.round(poolishFlourWeight));
-            if (ww) ww.textContent = String(Math.round(poolishWaterWeight));
-        }
-    }
-}
-
-// Save all input, select, and checkbox values to localStorage
-function saveFormState() {
-    document.querySelectorAll('input').forEach(function(el){
-        var id = el.id;
-        if (!id) return;
-        if (el.type === 'checkbox') {
-            localStorage.setItem('doughcalc_' + id, el.checked);
-        } else {
-            localStorage.setItem('doughcalc_' + id, el.value);
-        }
-    });
-    document.querySelectorAll('select').forEach(function(el){
-        var id = el.id;
-        if (!id) return;
-        localStorage.setItem('doughcalc_' + id, el.value);
-    });
-}
-
-// Restore all input, select, and checkbox values from localStorage
-function restoreFormState() {
-    document.querySelectorAll('input').forEach(function(el){
-        var id = el.id;
-        if (!id) return;
-        var val = localStorage.getItem('doughcalc_' + id);
-        if (val === null) return;
-        if (el.type === 'checkbox') {
-            el.checked = (val === 'true');
-        } else {
-            el.value = val;
-        }
-    });
-    document.querySelectorAll('select').forEach(function(el){
-        var id = el.id;
-        if (!id) return;
-        var val = localStorage.getItem('doughcalc_' + id);
-        if (val !== null) el.value = val;
-    });
-}
-
-function wireInputListeners() {
-    function sync() { refresh_data(); saveFormState(); }
-    // Special handling for poolish step checkboxes to lock/unlock poolish
-    var step1 = document.getElementById('poolish-step1');
-    var step2 = document.getElementById('poolish-step2');
-    function onPoolishStepChanged() {
-        var anyChecked = (step1 && step1.checked) || (step2 && step2.checked);
-        if (anyChecked) {
-            // Lock to the currently displayed poolish values
-            var pf = parseInt(document.getElementById('inputPoolishFlour').value || '0');
-            var pw = parseInt(document.getElementById('inputPoolishWater').value || String(pf));
-            lockPoolish(pf, pw);
-        } else {
-            // Unlock when both are unchecked
-            unlockPoolish();
-        }
-        refresh_data();
-        saveFormState();
-    }
-    if (step1) step1.addEventListener('change', onPoolishStepChanged);
-    if (step2) step2.addEventListener('change', onPoolishStepChanged);
-
-    // Generic listeners for remaining inputs (skip the two poolish checkboxes to avoid double handling)
-    document.querySelectorAll('input').forEach(function(el){
-        if (el.id === 'poolish-step1' || el.id === 'poolish-step2') return;
-        el.addEventListener('input', sync);
-        el.addEventListener('change', sync);
-    });
-    document.querySelectorAll('select').forEach(function(el){
-        el.addEventListener('change', sync);
-    });
-}
-
-function ensurePoolishLockConsistency() {
-    var step1 = document.getElementById('poolish-step1');
-    var step2 = document.getElementById('poolish-step2');
-    var anyChecked = (step1 && step1.checked) || (step2 && step2.checked);
-    if (anyChecked && !isPoolishLocked()) {
-        // Lock to current displayed values
-        var pf = parseInt(document.getElementById('inputPoolishFlour').value || '0');
-        var pw = parseInt(document.getElementById('inputPoolishWater').value || String(pf));
-        lockPoolish(pf, pw);
-    } else if (!anyChecked && isPoolishLocked()) {
-        unlockPoolish();
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function(){
-    // Reset button handler
-    var resetBtn = document.getElementById('resetFormBtn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function(){
-            var portionsEl = document.getElementById('inputPortions');
-            if (portionsEl && !portionsEl.disabled && !portionsEl.readOnly) portionsEl.value = '2';
-            var portionSizeEl = document.getElementById('inputPortionSize');
-            if (portionSizeEl && !portionSizeEl.disabled && !portionSizeEl.readOnly) portionSizeEl.value = '280';
-            var hydrationEl = document.getElementById('inputHydration');
-            if (hydrationEl && !hydrationEl.disabled && !hydrationEl.readOnly) hydrationEl.value = '70';
-            var saltEl = document.getElementById('inputSalt');
-            if (saltEl && !saltEl.disabled && !saltEl.readOnly) saltEl.value = '3';
-
-            // Uncheck all checkboxes
-            document.querySelectorAll("input[type='checkbox']").forEach(function(cb){ cb.checked = false; });
-
-            // Remove saved state
-            Object.keys(localStorage).forEach(function(key){ if (key.startsWith('doughcalc_')) localStorage.removeItem(key); });
-
-            // Reset date/time to defaults
-            setDateTimeDefaults();
-            var yeastTypeEl = document.getElementById('inputYeastType');
-            if (yeastTypeEl && !yeastTypeEl.disabled) yeastTypeEl.value = 'instant_dry';
-            refresh_data();
-        });
-    }
-
-    // Set defaults only if not already saved
-    if (!localStorage.getItem('doughcalc_inputDate')) {
-        document.getElementById('inputDate').value = defaultDate();
-    }
-    if (!localStorage.getItem('doughcalc_inputTime')) {
-        document.getElementById('inputTime').value = defaultTimeStr();
-    }
-
-    // Ensure date cannot be set in the past
-    var dateEl = document.getElementById('inputDate');
-    if (dateEl) dateEl.min = defaultDate();
-
-    // Restore state and wire listeners
-    restoreFormState();
-    wireInputListeners();
-    // Compute once, then enforce lock from checkboxes if needed, then compute again
-    refresh_data();
-    ensurePoolishLockConsistency();
-    refresh_data();
-
-    // Unlock poolish button (optional UX helper)
-    var unlockBtn = document.getElementById('unlockPoolishBtn');
-    if (unlockBtn) {
-        unlockBtn.addEventListener('click', function(){
-            var cb1 = document.getElementById('poolish-step1');
-            var cb2 = document.getElementById('poolish-step2');
-            if (cb1) cb1.checked = false;
-            if (cb2) cb2.checked = false;
-            unlockPoolish();
-            refresh_data();
-            saveFormState();
-        });
-    }
+    if (openTotalsBtn) openTotalsBtn.addEventListener('click', openModal);
+    if (closeTotalsBtn) closeTotalsBtn.addEventListener('click', closeModal);
+    if (closeTotalsBtn2) closeTotalsBtn2.addEventListener('click', closeModal);
+    if (totalsModal) totalsModal.addEventListener('click', function(e){ if (e.target && e.target.getAttribute('data-close') === 'true') closeModal(); });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && totalsModal && !totalsModal.hidden) closeModal(); });
 });
 </script>
 </body>
